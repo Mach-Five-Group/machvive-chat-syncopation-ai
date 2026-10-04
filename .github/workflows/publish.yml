@@ -23,11 +23,15 @@ jobs:
         with:
           node-version: 22
           registry-url: 'https://registry.npmjs.org'
+          # npm recommends disabling the dependency cache for release builds.
+          package-manager-cache: false
 
-      # npm's trusted publishing and provenance support both moved fast; pin the
-      # floor rather than trusting whatever the runner image ships.
+      # Trusted publishing needs npm 11.5.1+, and the runner's bundled npm can be
+      # older than that even on current Node.
       - name: Ensure a recent npm
-        run: npm install -g npm@latest
+        run: |
+          npm install -g npm@latest
+          npm --version
 
       - name: Install dev dependencies
         run: npm ci
@@ -48,8 +52,16 @@ jobs:
       - name: Test
         run: npm test
 
+      # No NODE_AUTH_TOKEN: trusted publishing authenticates over OIDC.
+      # --provenance is passed explicitly rather than relying on trusted
+      # publishing's automatic attestation, which has been reported not to fire
+      # in every case. It is a no-op when the attestation is already generated.
       - name: Publish
-        run: npm publish --provenance --access public
+        run: npm publish --access public --provenance
 
+      # Informational only. Registry propagation lags a minute or more after a
+      # publish, so a failure here means "not visible yet", not "bad release" —
+      # and a red run after a good publish trains everyone to ignore red runs.
       - name: Verify the attestation
+        continue-on-error: true
         run: npm audit signatures
