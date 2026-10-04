@@ -80,7 +80,17 @@ export class MachviveChatSyncopationServices extends HTMLElement {
   }
 
   connectedCallback() {
-    this.shadowRoot.innerHTML = '<style>:host { display: none; }</style>';
+    // `display: contents`, with a slot — not `display: none`.
+    //
+    // This element is documented as something you wrap around a surface, so it
+    // has to project its children. With `display: none` and no <slot> the host
+    // renders nothing and takes its whole subtree with it: every component
+    // inside it is invisible. jsdom has no layout engine, so the unit suite
+    // cannot see this at all — it was caught in a real browser.
+    //
+    // `display: contents` removes the host's own box, so wrapping costs nothing
+    // in layout while the children render exactly where they would have.
+    this.shadowRoot.innerHTML = '<style>:host { display: contents; }</style><slot></slot>';
     this.#config = resolveConfig(this);
     this.#conversation = new Conversation({ bus: this.#bus, maxTurns: this.#config.maxTurns });
     this.#daemon = new Daemon({ bus: this.#bus, conversation: this.#conversation, config: this.#config });

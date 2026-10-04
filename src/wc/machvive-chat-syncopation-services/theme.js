@@ -11,7 +11,7 @@
  */
 const LIGHT = `
     --mcs-fg: #1a1a1a;
-    --mcs-muted: #6e6e6e;
+    --mcs-muted: #646464;
     --mcs-bg: #ffffff;
     --mcs-surface: #f6f7f9;
     --mcs-user-bg: #e8f0fe;
@@ -27,7 +27,7 @@ const LIGHT = `
 
 const DARK = `
     --mcs-fg: #e8eaed;
-    --mcs-muted: #9aa0a6;
+    --mcs-muted: #a6acb3;
     --mcs-bg: #1f2125;
     --mcs-surface: #282b30;
     --mcs-user-bg: #1e3a5f;

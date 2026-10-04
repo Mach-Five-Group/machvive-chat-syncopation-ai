@@ -38,9 +38,12 @@ ${THEME_CSS}
           font-family: var(--mcs-font);
           color: var(--mcs-fg);
           background: var(--mcs-bg);
-          /* Pages that scroll the transcript with a keyboard get a focus ring
-             they can see, rather than a silently focused scroll container. */
-          scroll-behavior: smooth;
+          /* Deliberately NOT scroll-behavior: smooth. Autoscroll here fires on
+             every streamed chunk, and an animated scroll means the view
+             perpetually lags the newest text — while scrollTop reads taken
+             mid-animation are unreliable, which breaks the very pinned-to-bottom
+             detection that keeps us from yanking a reader around. Measured in
+             Chrome: setting scrollTop = 0 under smooth settled at 35, not 0. */
         }
         ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
         li { display: flex; }
@@ -72,7 +75,6 @@ ${THEME_CSS}
         }
         @keyframes blink { to { visibility: hidden; } }
         @media (prefers-reduced-motion: reduce) {
-          :host { scroll-behavior: auto; }
           li[data-status="pending"] .bubble::after { animation: none; }
         }
         .empty { color: var(--mcs-muted); font-size: 0.9375rem; padding: 0.5rem; }

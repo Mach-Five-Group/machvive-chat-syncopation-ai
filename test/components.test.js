@@ -35,6 +35,39 @@ test('every component attaches a shadow root', () => {
   }
 });
 
+test('the services element projects its children instead of hiding them', () => {
+  // It is documented as a wrapper, so it must render a slot and must not be
+  // display:none — with neither, wrapping a surface hides the whole surface.
+  // jsdom has no layout engine, so this asserts the structure that produces
+  // correct layout rather than the layout itself; the real check is the
+  // browser audit in design/chat-syncopation-playground/verify.mjs.
+  const services = document.createElement('machvive-chat-syncopation-services');
+  document.body.append(services);
+
+  const style = services.shadowRoot.querySelector('style').textContent;
+  assert.ok(services.shadowRoot.querySelector('slot'), 'needs a <slot> to project children');
+  assert.ok(!/:host\s*\{[^}]*display:\s*none/.test(style), ':host must not be display:none');
+  assert.match(style, /display:\s*contents/, ':host should take no layout space of its own');
+  services.remove();
+});
+
+test('a component inside a services wrapper is reachable and wired', async () => {
+  const page = mount(`
+    <machvive-chat-syncopation-services transport="echo">
+      <machvive-chat-syncopation-canvas></machvive-chat-syncopation-canvas>
+    </machvive-chat-syncopation-services>
+  `);
+  const services = page.query('machvive-chat-syncopation-services');
+  const canvas = page.query('machvive-chat-syncopation-canvas');
+
+  // The child is assigned to the services element's slot rather than being
+  // dropped on the floor.
+  assert.equal(canvas.assignedSlot?.tagName, 'SLOT');
+  await services.send('wrapped');
+  await until(() => canvas.shadowRoot.querySelectorAll('li').length === 2);
+  page.remove();
+});
+
 test('the container creates services when none governs it', async () => {
   const page = mount('<machvive-chat-syncopation transport="echo"></machvive-chat-syncopation>');
   const container = page.query('machvive-chat-syncopation');
