@@ -1,0 +1,55 @@
+name: publish
+
+# Publishes on a version tag, over npm trusted publishing (OIDC). There is no
+# token in this repo and none should be created: a long-lived credential in CI
+# is the thing provenance exists to avoid.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write        # required for OIDC and for the provenance attestation
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+
+      # npm's trusted publishing and provenance support both moved fast; pin the
+      # floor rather than trusting whatever the runner image ships.
+      - name: Ensure a recent npm
+        run: npm install -g npm@latest
+
+      - name: Install dev dependencies
+        run: npm ci
+
+      - name: Guard the tag against package.json
+        if: github.event_name == 'push'
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          manifest="$(node -p "require('./package.json').version")"
+          if [ "$tag" != "$manifest" ]; then
+            echo "tag v$tag does not match package.json $manifest" >&2
+            exit 1
+          fi
+          echo "publishing $manifest"
+
+      # The suite is also prepublishOnly, but running it as its own step means a
+      # failure reads as a test failure rather than a publish failure.
+      - name: Test
+        run: npm test
+
+      - name: Publish
+        run: npm publish --provenance --access public
+
+      - name: Verify the attestation
+        run: npm audit signatures

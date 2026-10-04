@@ -1,0 +1,43 @@
+{
+  "name": "machvive-chat-syncopation",
+  "owner": {
+    "name": "MachFiveTech Chicago",
+    "url": "https://github.com/Mach-Five-Group"
+  },
+  "description": "Claude Code plugins for the MachVive Chat Syncopation component collection.",
+  "version": "0.1.0",
+  "metadata": {
+    "pluginRoot": "./plugins"
+  },
+  "plugins": [
+    {
+      "name": "machvive-chat-syncopation",
+      "displayName": "MachVive Chat Syncopation",
+      "source": "./plugins/machvive-chat-syncopation",
+      "description": "Build chat interfaces from the machvive Chat Syncopation web components — transcript, composer, nudges, CLI, voice, history, and an in-user-agent transport with no token cost.",
+      "version": "0.1.0",
+      "author": {
+        "name": "MachFiveTech Chicago",
+        "url": "https://github.com/Mach-Five-Group"
+      },
+      "homepage": "https://github.com/Mach-Five-Group/machvive-chat-syncopation-ai/wiki",
+      "repository": "https://github.com/Mach-Five-Group/machvive-chat-syncopation-ai",
+      "license": "Apache-2.0",
+      "keywords": [
+        "chat",
+        "chatbot",
+        "ui",
+        "ux",
+        "web-components",
+        "webllm",
+        "offline-first"
+      ],
+      "category": "development",
+      "tags": [
+        "chat",
+        "web-components",
+        "ui"
+      ]
+    }
+  ]
+}

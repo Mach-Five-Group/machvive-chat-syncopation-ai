@@ -64,6 +64,22 @@ test('the package declares no runtime, peer, or optional dependencies', () => {
   }
 });
 
+test('the lock file agrees that there are no runtime dependencies', () => {
+  // package.json is the manifest consumers read, but a dependency can sit in
+  // the lock file alone after a tool installs one and the manifest is cleaned
+  // up by hand. The lock is what CI installs from, so check both.
+  const lock = JSON.parse(readFileSync(join(ROOT, 'package-lock.json'), 'utf8'));
+  const root = lock.packages?.[''] ?? {};
+  assert.deepEqual(root.dependencies ?? {}, {}, 'package-lock.json records a runtime dependency');
+
+  const installed = Object.keys(lock.packages ?? {})
+    .filter((path) => path.startsWith('node_modules/'))
+    .map((path) => path.replace(/^node_modules\//, ''));
+  const devNames = new Set(Object.keys(pkg.devDependencies ?? {}));
+  const unexpected = installed.filter((name) => name.startsWith('@machfivetechchicago/') && !devNames.has(name));
+  assert.deepEqual(unexpected, [], `the lock file installs ${unexpected.join(', ')}`);
+});
+
 test('every .js entry point has a sibling .d.ts', () => {
   for (const conditions of Object.values(pkg.exports)) {
     if (typeof conditions === 'string') continue;
