@@ -1,0 +1,7 @@
+# Excluded from the published package
+design/
+.github/
+plugins/
+test/
+.gitignore
+CLAUDE.md

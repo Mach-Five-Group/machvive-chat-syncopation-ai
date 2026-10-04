@@ -1,0 +1,97 @@
+{
+  "name": "@machfivetechchicago/machvive-chat-syncopation-ai",
+  "version": "0.1.0",
+  "description": "Dependency-free web components for prototyping complex chat interactions — engagement, low cognitive load, and user agency over their own data.",
+  "keywords": [
+    "chat",
+    "chatbot",
+    "chat-app",
+    "web-components",
+    "webcomponents",
+    "ui",
+    "ux",
+    "ai",
+    "webllm",
+    "offline-first"
+  ],
+  "homepage": "https://github.com/Mach-Five-Group/machvive-chat-syncopation-ai#readme",
+  "bugs": {
+    "url": "https://github.com/Mach-Five-Group/machvive-chat-syncopation-ai/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mach-Five-Group/machvive-chat-syncopation-ai.git"
+  },
+  "license": "Apache-2.0",
+  "author": "MachFiveTech Chicago",
+  "type": "module",
+  "sideEffects": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "main": "index.js",
+  "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./services": {
+      "types": "./src/wc/machvive-chat-syncopation-services/machvive-chat-syncopation-services.d.ts",
+      "default": "./src/wc/machvive-chat-syncopation-services/machvive-chat-syncopation-services.js"
+    },
+    "./container": {
+      "types": "./src/wc/machvive-chat-syncopation/machvive-chat-syncopation.d.ts",
+      "default": "./src/wc/machvive-chat-syncopation/machvive-chat-syncopation.js"
+    },
+    "./canvas": {
+      "types": "./src/wc/machvive-chat-syncopation-canvas/machvive-chat-syncopation-canvas.d.ts",
+      "default": "./src/wc/machvive-chat-syncopation-canvas/machvive-chat-syncopation-canvas.js"
+    },
+    "./prompt": {
+      "types": "./src/wc/machvive-chat-syncopation-prompt/machvive-chat-syncopation-prompt.d.ts",
+      "default": "./src/wc/machvive-chat-syncopation-prompt/machvive-chat-syncopation-prompt.js"
+    },
+    "./nudge": {
+      "types": "./src/wc/machvive-chat-syncopation-nudge/machvive-chat-syncopation-nudge.d.ts",
+      "default": "./src/wc/machvive-chat-syncopation-nudge/machvive-chat-syncopation-nudge.js"
+    },
+    "./cli": {
+      "types": "./src/wc/machvive-chat-syncopation-cli/machvive-chat-syncopation-cli.d.ts",
+      "default": "./src/wc/machvive-chat-syncopation-cli/machvive-chat-syncopation-cli.js"
+    },
+    "./voice": {
+      "types": "./src/wc/machvive-chat-syncopation-voice/machvive-chat-syncopation-voice.d.ts",
+      "default": "./src/wc/machvive-chat-syncopation-voice/machvive-chat-syncopation-voice.js"
+    },
+    "./inspector": {
+      "types": "./src/wc/machvive-chat-syncopation-inspector/machvive-chat-syncopation-inspector.d.ts",
+      "default": "./src/wc/machvive-chat-syncopation-inspector/machvive-chat-syncopation-inspector.js"
+    },
+    "./history": {
+      "types": "./src/wc/machvive-chat-syncopation-history/machvive-chat-syncopation-history.d.ts",
+      "default": "./src/wc/machvive-chat-syncopation-history/machvive-chat-syncopation-history.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "src"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "node --test --import ./test/setup.js \"test/*.test.js\"",
+    "test:watch": "node --test --watch --import ./test/setup.js \"test/*.test.js\"",
+    "prepublishOnly": "npm test"
+  },
+  "devDependencies": {
+    "fake-indexeddb": "^6.2.5",
+    "jsdom": "^29.1.1"
+  },
+  "dependencies": {
+    "@machfivetechchicago/machvive-webmcp-ai": "^6.3.1"
+  }
+}
