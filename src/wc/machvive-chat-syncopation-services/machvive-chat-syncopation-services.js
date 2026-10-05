@@ -113,6 +113,18 @@ export class MachviveChatSyncopationServices extends HTMLElement {
 
   /** Convenience for page code; components use the daemon directly. */
   send(text) { return this.#daemon?.send(text); }
+
+  /**
+   * Registers a transport and, unless told otherwise, selects it.
+   *
+   * Registering without selecting is the common mistake — the transport exists,
+   * nothing uses it, and the surface silently keeps echoing.
+   */
+  registerTransport(name, transport, { select = true } = {}) {
+    this.#daemon?.register(name, transport);
+    if (select && this.#config) this.#config.transport = name;
+    return this;
+  }
 }
 
 if (!customElements.get('machvive-chat-syncopation-services')) {

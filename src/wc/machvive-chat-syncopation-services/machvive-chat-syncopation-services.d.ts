@@ -31,6 +31,12 @@ export declare class MachviveChatSyncopationServices extends HTMLElement {
   readonly cache: Cache;
   readonly config: SyncopationConfig | null;
   send(text: string): Promise<ChatRecord | null> | undefined;
+  /** Registers a transport and, unless told otherwise, selects it. */
+  registerTransport(
+    name: string,
+    transport: import('./daemon.js').Transport,
+    options?: { select?: boolean }
+  ): this;
 }
 
 declare global {

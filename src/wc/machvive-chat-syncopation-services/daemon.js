@@ -33,10 +33,33 @@ const TRANSPORTS = {
 
 export class Daemon {
   #bus; #conversation; #config; #abort = null;
+  #transports;
 
-  constructor({ bus, conversation, config }) {
+  constructor({ bus, conversation, config, transports } = {}) {
     this.#bus = bus; this.#conversation = conversation; this.#config = config;
+    this.#transports = { ...TRANSPORTS, ...transports };
   }
+
+  /**
+   * Adds a transport under a name `config.transport` can select.
+   *
+   * This is the supported way to connect a model. Without it the only routes
+   * were subclassing or driving the conversation by hand — and a page that
+   * drives the conversation by hand loses everything the daemon coordinates:
+   * the busy guard, stop(), the error turn, and daemon:idle, which is what the
+   * composer listens to in order to turn Stop back into Send.
+   */
+  register(name, transport) {
+    if (typeof transport !== 'function') {
+      throw new TypeError(`transport "${name}" must be an async generator function`);
+    }
+    this.#transports[name] = transport;
+    this.#bus?.emit('daemon:transport-registered', { name });
+    return this;
+  }
+
+  /** Every selectable transport name, built-ins and registered alike. */
+  get transports() { return Object.keys(this.#transports); }
 
   get busy() { return this.#abort !== null; }
 
@@ -52,7 +75,7 @@ export class Daemon {
       meta: { [META.SOURCE]: this.#config.transport, [META.MODEL]: this.#config.model }
     });
 
-    const transport = TRANSPORTS[this.#config.transport] ?? TRANSPORTS.echo;
+    const transport = this.#transports[this.#config.transport] ?? this.#transports.echo;
     this.#abort = new AbortController();
     const startedAt = Date.now();
 

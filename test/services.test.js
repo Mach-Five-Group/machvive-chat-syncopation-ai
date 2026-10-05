@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { PubSub } from '../src/wc/machvive-chat-syncopation-services/pubsub.js';
 import { Conversation } from '../src/wc/machvive-chat-syncopation-services/conversation.js';
-import { Daemon } from '../src/wc/machvive-chat-syncopation-services/daemon.js';
+import { Daemon, transports } from '../src/wc/machvive-chat-syncopation-services/daemon.js';
 import { Cache } from '../src/wc/machvive-chat-syncopation-services/cache.js';
 import { createRecord, ROLES, isPending } from '../src/wc/machvive-chat-syncopation-services/record.js';
 import { META, annotate, readMeta, userMeta } from '../src/wc/machvive-chat-syncopation-services/metadata.js';
@@ -165,6 +165,83 @@ test('a transport that throws produces a visible error turn', async () => {
   assert.equal(reply.status, 'error');
   assert.match(readMeta(reply, META.ERROR), /render blew up/);
   assert.ok(errored, 'daemon:error should announce the failure');
+});
+
+test('a registered transport is selectable and drives a real turn', async () => {
+  const bus = new PubSub();
+  const conversation = new Conversation({ bus });
+  const config = resolveConfig(null, { transport: 'mock' });
+  const daemon = new Daemon({ bus, conversation, config });
+
+  daemon.register('mock', async function* (prompt) {
+    yield `heard: ${prompt}`;
+  });
+
+  const reply = await daemon.send('hello');
+  assert.equal(reply.text, 'heard: hello');
+  assert.equal(reply.status, 'complete');
+  assert.ok(daemon.transports.includes('mock'));
+  // Registering must not displace the built-ins.
+  for (const name of transports) assert.ok(daemon.transports.includes(name));
+});
+
+test('transports can be supplied at construction', async () => {
+  const conversation = new Conversation();
+  const daemon = new Daemon({
+    conversation,
+    config: resolveConfig(null, { transport: 'canned' }),
+    transports: { async *canned() { yield 'from the constructor'; } }
+  });
+  const reply = await daemon.send('x');
+  assert.equal(reply.text, 'from the constructor');
+});
+
+test('a registered transport still gets the busy guard, stop and the error turn', async () => {
+  const bus = new PubSub();
+  const conversation = new Conversation({ bus });
+  const config = resolveConfig(null, { transport: 'slow' });
+  const daemon = new Daemon({ bus, conversation, config });
+  daemon.register('slow', async function* () {
+    for (const word of ['one ', 'two ', 'three ', 'four ']) {
+      await new Promise((r) => setTimeout(r, 30));
+      yield word;
+    }
+  });
+
+  const first = daemon.send('go');
+  // The whole point of registering rather than hand-driving the conversation:
+  // everything the daemon coordinates keeps working.
+  assert.equal(await daemon.send('again'), null, 'busy guard still applies');
+  await until(() => conversation.records[1]?.text.length > 0);
+  daemon.stop();
+  await first;
+  assert.ok(conversation.records[1].text.length < 'one two three four '.length);
+});
+
+test('a failing registered transport produces a visible error turn', async () => {
+  const bus = new PubSub();
+  const conversation = new Conversation({ bus });
+  const daemon = new Daemon({ bus, conversation, config: resolveConfig(null, { transport: 'broken' }) });
+  daemon.register('broken', async function* () { throw new Error('upstream exploded'); });
+
+  const reply = await daemon.send('x');
+  assert.equal(reply.status, 'error');
+  assert.match(readMeta(reply, META.ERROR), /upstream exploded/);
+});
+
+test('register rejects a non-function', () => {
+  const daemon = new Daemon({ conversation: new Conversation(), config: resolveConfig(null) });
+  // Caught here, or it surfaces much later as "why is my surface still echoing".
+  assert.throws(() => daemon.register('bad', 'not a function'), TypeError);
+  assert.throws(() => daemon.register('bad', null), TypeError);
+});
+
+test('an unknown transport falls back to echo rather than failing the turn', async () => {
+  const conversation = new Conversation();
+  const daemon = new Daemon({ conversation, config: resolveConfig(null, { transport: 'never-registered' }) });
+  const reply = await daemon.send('hi');
+  assert.equal(reply.status, 'complete');
+  assert.match(reply.text, /^You said: hi/);
 });
 
 test('config precedence is explicit > attribute > default', () => {

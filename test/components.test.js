@@ -420,6 +420,32 @@ test('CLI arrow keys walk the session history', async () => {
   page.remove();
 });
 
+test('services.registerTransport wires a mock end to end', async () => {
+  const page = mount('<machvive-chat-syncopation-services></machvive-chat-syncopation-services>');
+  const services = page.query('machvive-chat-syncopation-services');
+
+  services.registerTransport('mock', async function* (prompt) {
+    for (const part of ['mock ', 'reply ', 'to ', prompt]) yield part;
+  });
+
+  assert.equal(services.config.transport, 'mock', 'registering selects it by default');
+  const reply = await services.send('you');
+  assert.equal(reply.text, 'mock reply to you');
+  page.remove();
+});
+
+test('registerTransport can register without selecting', async () => {
+  const page = mount('<machvive-chat-syncopation-services transport="echo"></machvive-chat-syncopation-services>');
+  const services = page.query('machvive-chat-syncopation-services');
+  services.registerTransport('spare', async function* () { yield 'unused'; }, { select: false });
+
+  assert.equal(services.config.transport, 'echo');
+  assert.ok(services.daemon.transports.includes('spare'));
+  const reply = await services.send('hi');
+  assert.match(reply.text, /^You said: hi/);
+  page.remove();
+});
+
 test('the inspector captures topics it was never taught, including custom ones', async () => {
   const page = mount(`
     <machvive-chat-syncopation-services transport="echo">

@@ -1,6 +1,6 @@
 {
   "name": "@machfivetechchicago/machvive-chat-syncopation-ai",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Dependency-free web components for prototyping complex chat interactions — engagement, low cognitive load, and user agency over their own data.",
   "keywords": [
     "chat",

@@ -165,9 +165,7 @@ contract — a server, a model in the user agent, and a canned script all look t
 same to every component.
 
 ```js
-import { Daemon } from '@machfivetechchicago/machvive-chat-syncopation-ai/services';
-
-async function* anthropic(prompt, { config }) {
+services.registerTransport('anthropic', async function* (prompt, { config }) {
   const response = await fetch(config.endpoint, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -176,8 +174,18 @@ async function* anthropic(prompt, { config }) {
   for await (const chunk of response.body) {
     yield new TextDecoder().decode(chunk);
   }
-}
+});
 ```
+
+`registerTransport` selects the transport it registers, so that is all it takes.
+Pass `{ select: false }` to register one without switching to it, and set
+`services.config.transport` later to choose between them.
+
+Registering is worth preferring over driving the conversation yourself, because
+the daemon coordinates everything around the turn: the busy guard that refuses a
+second concurrent send, `stop()` keeping the partial text, the visible error
+record when a transport throws, and the `daemon:idle` event the composer listens
+to in order to turn **Stop** back into **Send**.
 
 The library ships no transport that touches the network — the call above is yours to
 make, from your own code, with your own credentials. Nothing here holds an API key

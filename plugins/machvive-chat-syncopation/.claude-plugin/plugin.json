@@ -1,7 +1,7 @@
 {
   "name": "machvive-chat-syncopation",
   "description": "Build chat interfaces from the machvive Chat Syncopation web components — transcript, composer, nudges, CLI, voice, history, and an in-user-agent transport with no token cost.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": {
     "name": "MachFiveTech Chicago",
     "url": "https://github.com/Mach-Five-Group"

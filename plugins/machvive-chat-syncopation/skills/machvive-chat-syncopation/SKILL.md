@@ -121,7 +121,7 @@ contract, and it is what makes a server, a browser-resident model and a canned
 script interchangeable.
 
 ```javascript
-async function* myTransport(prompt, { config }) {
+services.registerTransport('my-model', async function* (prompt, { config }) {
   const response = await fetch(config.endpoint, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -130,8 +130,17 @@ async function* myTransport(prompt, { config }) {
   for await (const chunk of response.body) {
     yield new TextDecoder().decode(chunk);
   }
-}
+});
 ```
+
+`registerTransport` selects what it registers; pass `{ select: false }` to
+register without switching, and set `services.config.transport` to choose later.
+`services.daemon.transports` lists every selectable name.
+
+**Register rather than adding records by hand.** The daemon coordinates the busy
+guard, `stop()` keeping partial text, the visible error record, and `daemon:idle`
+— and that last one is what turns the composer's **Stop** back into **Send**. A
+hand-wired surface looks correct until the button sticks on Stop for the session.
 
 The package ships no transport that touches the network. The `remote` transport is a
 stub, and the request above is the integrator's to make — with their credentials,
