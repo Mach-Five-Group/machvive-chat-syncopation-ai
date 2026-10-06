@@ -95,6 +95,50 @@ Settable on the services element, or on the container when it creates its own.
 | `max-turns` | `200` | Oldest turns trimmed past this |
 | `streaming` | `true` | Whether transports stream |
 | `theme` | *OS* | `light` or `dark` |
+| `state` | — | `design` renders a configuration form (see below) |
+
+### Configuring any component
+
+Every element — the services element included — declares a `static configSchema`,
+and one schema drives all three configuration paths so they cannot drift apart:
+
+- **Attributes** (`placeholder="…"`, `max-turns="200"`), with HTML semantics
+- **The `config` object**: `prompt.config = { placeholder: 'Ask…' }` overrides keys
+  and reflects them back to attributes
+- **Design state**: set `state="design"` and the element renders an isomorphic form
+  generated from its own schema; edits apply live and persist to attributes
+
+```javascript
+el.configSchema;  // { key: { type, default, label, description, options? } }
+el.config;        // resolved: schema defaults < attributes < object overrides
+```
+
+A runtime change to the services configuration is announced as `config:changed`.
+When a user asks how to make a chat component configurable at author time — or wants
+a settings panel for their own component — this is the mechanism to reach for, not a
+bespoke form.
+
+## Recording and replaying the bus
+
+The services element owns a `Recorder` on the wildcard topic, capturing every
+emission as plain, JSON-safe data (`{ seq, at, topic, payload }`, snapshotted at
+emit time so a streaming turn does not rewrite history).
+
+```javascript
+services.recorder.start();
+await services.send('hello');
+services.recorder.stop();
+
+const json = services.recorder.export();       // mcs-recording@1
+recorder.import(json);                          // here or in another page
+await recorder.replay();                        // re-emit instantly
+await recorder.replay({ pace: 'realtime' });    // or with original timing
+```
+
+Replay re-emits onto the bus, so components re-react as they did live — a recording
+is a test fixture, a support artifact, or a demo script with no extra machinery. No
+recorder UI ships yet; the data model is the feature. When a user wants to capture,
+replay, import or export a whole session, this is what to use.
 
 ## Bus topics
 
@@ -106,8 +150,9 @@ Settable on the services element, or on the container when it creates its own.
 | `record:updated` | the record | Status or meta changed |
 | `conversation:cleared` | `{ id }` | The transcript was emptied |
 | `daemon:idle` | `{ id }` | Generation finished or stopped |
-| `daemon:error` | `{ id, error }` | A turn failed |
+| `daemon:error` | `{ id, error, name }` | A turn failed (`error` is a string — plain data, so recordings survive JSON) |
 | `prompt:fill` | `{ text, send }` | Something wants text in the composer |
+| `config:changed` | `{ config, previous? }` | Services configuration changed at runtime |
 
 `bus.on('*', ({ topic, payload }) => …)` sees every topic, including custom ones an
 integrator emits — that is how the inspector works. `on` returns an unsubscribe
