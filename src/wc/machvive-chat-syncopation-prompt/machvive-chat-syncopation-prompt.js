@@ -12,21 +12,63 @@
  */
 import { THEME_CSS, CONTROL_CSS } from '../machvive-chat-syncopation-services/theme.js';
 import { whenServices } from '../machvive-chat-syncopation-services/machvive-chat-syncopation-services.js';
+import { resolveComponentConfig, keyToAttr } from '../machvive-chat-syncopation-services/component-config.js';
+import { renderConfigForm, CONFIG_FORM_CSS } from '../machvive-chat-syncopation-services/config-form.js';
 
 export class MachviveChatSyncopationPrompt extends HTMLElement {
+  static configSchema = {
+    placeholder: { type: 'string', default: 'Message…', label: 'Placeholder', description: 'Empty-field hint text' },
+    label: { type: 'string', default: 'Message', label: 'Accessible label', description: 'Screen-reader label for the field' }
+  };
+
+  static get observedAttributes() {
+    return [...Object.keys(this.configSchema).map(keyToAttr), 'state'];
+  }
+
   #services = null;
   #off = [];
   #field = null;
   #button = null;
+  #overrides = {};
 
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
   }
 
+  get config() { return resolveComponentConfig(this, this.#overrides); }
+  set config(overrides) {
+    if (overrides == null || typeof overrides !== 'object') return;
+    for (const [key, value] of Object.entries(overrides)) this.#applyConfig(key, value);
+  }
+
+  #applyConfig(key, value) {
+    if (!(key in this.constructor.configSchema)) return;
+    this.#overrides[key] = value;
+    this.setAttribute(keyToAttr(key), String(value));
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (oldValue === newValue || !this.shadowRoot?.childElementCount) return;
+    if (name === 'state' || name === 'placeholder' || name === 'label') this.#render();
+  }
+
   async connectedCallback() {
-    const placeholder = this.getAttribute('placeholder') ?? 'Message…';
-    const label = this.getAttribute('label') ?? 'Message';
+    this.#render();
+
+    this.#services = await whenServices(this);
+    if (!this.#services || !this.isConnected) return;
+    this.#off = [
+      this.#services.bus.on('daemon:idle', () => this.#setMode('send')),
+      // A nudge or a CLI can hand text to the composer; routing it through the
+      // same field means the user still sees and can edit it before sending.
+      this.#services.bus.on('prompt:fill', ({ text, send }) => this.fill(text, { send }))
+    ];
+  }
+
+  #render() {
+    const { placeholder, label } = this.config;
+    const design = this.getAttribute('state') === 'design';
     this.shadowRoot.innerHTML = `
       <style>
 ${THEME_CSS}
@@ -40,7 +82,7 @@ ${CONTROL_CSS}
           background: var(--mcs-bg);
           border-top: 1px solid var(--mcs-border);
         }
-        form { display: flex; gap: 0.5rem; align-items: flex-end; }
+        form.composer { display: flex; gap: 0.5rem; align-items: flex-end; }
         textarea {
           flex: 1 1 auto;
           min-height: 2.5rem;
@@ -63,27 +105,25 @@ ${CONTROL_CSS}
            disappears on a dark surface. */
         :focus-visible { outline: 2px solid var(--mcs-accent); outline-offset: 2px; }
         .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+${design ? CONFIG_FORM_CSS : ''}
       </style>
-      <form>
-        <label class="sr" for="field">${label}</label>
-        <textarea id="field" rows="1" placeholder="${placeholder}"></textarea>
+      <form class="composer">
+        <label class="sr" for="field"></label>
+        <textarea id="field" rows="1"></textarea>
         <button type="submit" data-mode="send">Send</button>
       </form>
     `;
-    this.#field = this.shadowRoot.querySelector('textarea');
+    const srLabel = this.shadowRoot.querySelector('label.sr');
+    const field = this.shadowRoot.querySelector('textarea');
+    // textContent / property assignment: config values are page data, not markup.
+    srLabel.textContent = label;
+    field.placeholder = placeholder;
+    this.#field = field;
     this.#button = this.shadowRoot.querySelector('button');
-    this.shadowRoot.querySelector('form').addEventListener('submit', this.#submit);
+    this.shadowRoot.querySelector('form.composer').addEventListener('submit', this.#submit);
     this.#field.addEventListener('keydown', this.#keydown);
     this.#field.addEventListener('input', this.#autosize);
-
-    this.#services = await whenServices(this);
-    if (!this.#services || !this.isConnected) return;
-    this.#off = [
-      this.#services.bus.on('daemon:idle', () => this.#setMode('send')),
-      // A nudge or a CLI can hand text to the composer; routing it through the
-      // same field means the user still sees and can edit it before sending.
-      this.#services.bus.on('prompt:fill', ({ text, send }) => this.fill(text, { send }))
-    ];
+    if (design) renderConfigForm(this.shadowRoot, this.constructor.configSchema, this.config, (k, v) => this.#applyConfig(k, v));
   }
 
   disconnectedCallback() {

@@ -1,6 +1,10 @@
 import type { MachviveChatSyncopationServices } from '../machvive-chat-syncopation-services/machvive-chat-syncopation-services.js';
+import type { ConfigSchema } from '../machvive-chat-syncopation-services/component-config.js';
 
 export declare class MachviveChatSyncopationCli extends HTMLElement {
+  static configSchema: ConfigSchema;
+  get config(): Record<string, unknown>;
+  set config(overrides: Record<string, unknown>);
   /** Adds a slash command, for domain verbs this collection cannot know about. */
   register(name: string, command: { describe?: string; run: (args: string) => string | void }): void;
 }

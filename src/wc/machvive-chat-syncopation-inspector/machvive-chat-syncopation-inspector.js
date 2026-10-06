@@ -11,25 +11,64 @@
  */
 import { THEME_CSS, CONTROL_CSS } from '../machvive-chat-syncopation-services/theme.js';
 import { whenServices } from '../machvive-chat-syncopation-services/machvive-chat-syncopation-services.js';
-
-const DEFAULT_LIMIT = 200;
+import { resolveComponentConfig, keyToAttr } from '../machvive-chat-syncopation-services/component-config.js';
+import { renderConfigForm, CONFIG_FORM_CSS } from '../machvive-chat-syncopation-services/config-form.js';
 
 export class MachviveChatSyncopationInspector extends HTMLElement {
+  static configSchema = {
+    limit: { type: 'number', default: 200, label: 'Event limit', description: 'How many bus events to keep in view' }
+  };
+
+  static get observedAttributes() {
+    return [...Object.keys(this.configSchema).map(keyToAttr), 'state'];
+  }
+
   #services = null;
   #off = [];
   #events = [];
   #body = null;
   #paused = false;
+  #overrides = {};
 
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
   }
 
-  get limit() { return Number(this.getAttribute('limit')) || DEFAULT_LIMIT; }
+  get config() { return resolveComponentConfig(this, this.#overrides); }
+  set config(overrides) {
+    if (overrides == null || typeof overrides !== 'object') return;
+    for (const [key, value] of Object.entries(overrides)) this.#applyConfig(key, value);
+  }
+
+  #applyConfig(key, value) {
+    if (!(key in this.constructor.configSchema)) return;
+    this.#overrides[key] = value;
+    this.setAttribute(keyToAttr(key), String(value));
+  }
+
+  get limit() { return this.config.limit; }
   get events() { return [...this.#events]; }
 
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (oldValue === newValue || !this.shadowRoot?.childElementCount) return;
+    if (name === 'state') this.#render();
+  }
+
   async connectedCallback() {
+    this.#render();
+
+    this.#services = await whenServices(this);
+    if (!this.#services || !this.isConnected) {
+      this.shadowRoot.querySelector('.empty').textContent =
+        'No <machvive-chat-syncopation-services> found — the inspector reads that element’s bus.';
+      return;
+    }
+    this.#off = [this.#services.bus.on('*', (event) => this.#record(event))];
+  }
+
+  #render() {
+    const design = this.getAttribute('state') === 'design';
     this.shadowRoot.innerHTML = `
       <style>
 ${THEME_CSS}
@@ -55,8 +94,8 @@ ${CONTROL_CSS}
           border-bottom: 1px solid var(--mcs-border);
         }
         h2 { margin: 0; font-size: 0.8125rem; font-weight: 600; flex: 1 1 auto; }
-        button { padding: 0.25rem 0.5rem; cursor: pointer; font-size: 0.75rem; }
-        button[aria-pressed="true"] { background: var(--mcs-accent); color: var(--mcs-accent-fg); border-color: transparent; }
+        header button { padding: 0.25rem 0.5rem; cursor: pointer; font-size: 0.75rem; }
+        header button[aria-pressed="true"] { background: var(--mcs-accent); color: var(--mcs-accent-fg); border-color: transparent; }
         .log { margin: 0; padding: 0; list-style: none; max-height: var(--mcs-inspector-height, 14rem); overflow-y: auto; }
         .log li { display: flex; gap: 0.5rem; padding: 0.1875rem 0.5rem; border-bottom: 1px solid var(--mcs-border); }
         .log li:last-child { border-bottom: 0; }
@@ -65,6 +104,7 @@ ${CONTROL_CSS}
         .detail { flex: 1 1 auto; color: var(--mcs-muted); overflow-wrap: anywhere; }
         .empty { padding: 0.5rem; margin: 0; color: var(--mcs-muted); }
         :focus-visible { outline: 2px solid var(--mcs-accent); outline-offset: 2px; }
+${design ? CONFIG_FORM_CSS : ''}
       </style>
       <header>
         <h2>Bus</h2>
@@ -85,14 +125,7 @@ ${CONTROL_CSS}
       this.#body.replaceChildren();
       this.shadowRoot.querySelector('.empty').hidden = false;
     });
-
-    this.#services = await whenServices(this);
-    if (!this.#services || !this.isConnected) {
-      this.shadowRoot.querySelector('.empty').textContent =
-        'No <machvive-chat-syncopation-services> found — the inspector reads that element’s bus.';
-      return;
-    }
-    this.#off = [this.#services.bus.on('*', (event) => this.#record(event))];
+    if (design) renderConfigForm(this.shadowRoot, this.constructor.configSchema, this.config, (k, v) => this.#applyConfig(k, v));
   }
 
   disconnectedCallback() {

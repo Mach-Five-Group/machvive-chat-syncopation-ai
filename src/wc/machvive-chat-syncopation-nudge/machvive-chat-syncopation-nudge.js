@@ -12,61 +12,50 @@
  */
 import { THEME_CSS, CONTROL_CSS } from '../machvive-chat-syncopation-services/theme.js';
 import { whenServices } from '../machvive-chat-syncopation-services/machvive-chat-syncopation-services.js';
+import { resolveComponentConfig, keyToAttr } from '../machvive-chat-syncopation-services/component-config.js';
+import { renderConfigForm, CONFIG_FORM_CSS } from '../machvive-chat-syncopation-services/config-form.js';
 
 export class MachviveChatSyncopationNudge extends HTMLElement {
+  static configSchema = {
+    suggestions: { type: 'string', default: '', label: 'Suggestions', description: 'Pipe-separated suggested openings' },
+    idleMs: { type: 'number', default: 0, label: 'Idle nudge (ms)', description: 'Show a re-engagement note after this much silence; 0 disables' },
+    idleText: { type: 'string', default: 'Still here if you need anything.', label: 'Idle text', description: 'The re-engagement note itself' }
+  };
+
+  static get observedAttributes() {
+    return [...Object.keys(this.configSchema).map(keyToAttr), 'state'];
+  }
+
   #services = null;
   #off = [];
   #timer = null;
   #nudged = false;
-
-  static get observedAttributes() { return ['suggestions', 'idle-ms', 'idle-text']; }
+  #overrides = {};
 
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
   }
 
+  get config() { return resolveComponentConfig(this, this.#overrides); }
+  set config(overrides) {
+    if (overrides == null || typeof overrides !== 'object') return;
+    for (const [key, value] of Object.entries(overrides)) this.#applyConfig(key, value);
+  }
+
+  #applyConfig(key, value) {
+    if (!(key in this.constructor.configSchema)) return;
+    this.#overrides[key] = value;
+    this.setAttribute(keyToAttr(key), String(value));
+  }
+
   get suggestions() {
-    const raw = this.getAttribute('suggestions');
+    const raw = this.config.suggestions;
     if (!raw) return [];
     return raw.split('|').map((s) => s.trim()).filter(Boolean);
   }
 
   async connectedCallback() {
-    this.shadowRoot.innerHTML = `
-      <style>
-${THEME_CSS}
-${CONTROL_CSS}
-        :host {
-          display: block;
-          flex: 0 0 auto;
-          padding: 0.5rem;
-          font-family: var(--mcs-font);
-          color: var(--mcs-fg);
-          background: var(--mcs-bg);
-        }
-        :host([hidden]) { display: none; }
-        .chips { display: flex; flex-wrap: wrap; gap: 0.375rem; }
-        button {
-          padding: 0.375rem 0.75rem;
-          font-size: 0.875rem;
-          cursor: pointer;
-          background: var(--mcs-surface);
-          border-radius: 999px;
-          text-align: left;
-        }
-        button:hover { border-color: var(--mcs-accent); }
-        :focus-visible { outline: 2px solid var(--mcs-accent); outline-offset: 2px; }
-        .idle {
-          margin: 0.5rem 0 0;
-          font-size: 0.875rem;
-          color: var(--mcs-muted);
-        }
-        .idle[hidden] { display: none; }
-      </style>
-      <div class="chips" role="group" aria-label="Suggested messages"></div>
-      <p class="idle" hidden></p>
-    `;
     this.#render();
 
     this.#services = await whenServices(this);
@@ -88,11 +77,54 @@ ${CONTROL_CSS}
     this.#off = [];
   }
 
-  attributeChangedCallback() {
-    if (this.shadowRoot?.childElementCount) this.#render();
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (oldValue === newValue || !this.shadowRoot?.childElementCount) return;
+    this.#render();
+    if (name === 'idle-ms' || name === 'idle-text') this.#resetIdle();
   }
 
   #render() {
+    const design = this.getAttribute('state') === 'design';
+    this.shadowRoot.innerHTML = `
+      <style>
+${THEME_CSS}
+${CONTROL_CSS}
+        :host {
+          display: block;
+          flex: 0 0 auto;
+          padding: 0.5rem;
+          font-family: var(--mcs-font);
+          color: var(--mcs-fg);
+          background: var(--mcs-bg);
+        }
+        :host([hidden]) { display: none; }
+        .chips { display: flex; flex-wrap: wrap; gap: 0.375rem; }
+        .chips button {
+          padding: 0.375rem 0.75rem;
+          font-size: 0.875rem;
+          cursor: pointer;
+          background: var(--mcs-surface);
+          border-radius: 999px;
+          text-align: left;
+        }
+        .chips button:hover { border-color: var(--mcs-accent); }
+        :focus-visible { outline: 2px solid var(--mcs-accent); outline-offset: 2px; }
+        .idle {
+          margin: 0.5rem 0 0;
+          font-size: 0.875rem;
+          color: var(--mcs-muted);
+        }
+        .idle[hidden] { display: none; }
+${design ? CONFIG_FORM_CSS : ''}
+      </style>
+      <div class="chips" role="group" aria-label="Suggested messages"></div>
+      <p class="idle" hidden></p>
+    `;
+    this.#renderChips();
+    if (design) renderConfigForm(this.shadowRoot, this.constructor.configSchema, this.config, (k, v) => this.#applyConfig(k, v));
+  }
+
+  #renderChips() {
     const chips = this.shadowRoot.querySelector('.chips');
     if (!chips) return;
     chips.replaceChildren(...this.suggestions.map((text) => {
@@ -116,12 +148,12 @@ ${CONTROL_CSS}
 
   #resetIdle() {
     clearTimeout(this.#timer);
-    const after = Number(this.getAttribute('idle-ms'));
+    const after = this.config.idleMs;
     if (!after || this.#nudged) return;
     this.#timer = setTimeout(() => {
       this.#nudged = true;
       const note = this.shadowRoot.querySelector('.idle');
-      note.textContent = this.getAttribute('idle-text') ?? 'Still here if you need anything.';
+      note.textContent = this.config.idleText;
       note.hidden = false;
       this.dispatchEvent(new CustomEvent('nudge-idle', { bubbles: true, composed: true }));
     }, after);

@@ -12,6 +12,8 @@
  */
 import { THEME_CSS, CONTROL_CSS } from '../machvive-chat-syncopation-services/theme.js';
 import { whenServices } from '../machvive-chat-syncopation-services/machvive-chat-syncopation-services.js';
+import { resolveComponentConfig, keyToAttr } from '../machvive-chat-syncopation-services/component-config.js';
+import { renderConfigForm, CONFIG_FORM_CSS } from '../machvive-chat-syncopation-services/config-form.js';
 
 const Recognition = typeof window !== 'undefined'
   ? (window.SpeechRecognition ?? window.webkitSpeechRecognition ?? null)
@@ -19,17 +21,50 @@ const Recognition = typeof window !== 'undefined'
 const canSpeak = () => typeof window !== 'undefined' && 'speechSynthesis' in window;
 
 export class MachviveChatSyncopationVoice extends HTMLElement {
+  static configSchema = {
+    lang: { type: 'string', default: '', label: 'Language', description: 'BCP-47 tag for dictation; empty follows the services locale' }
+  };
+
+  static get observedAttributes() {
+    return [...Object.keys(this.configSchema).map(keyToAttr), 'state'];
+  }
+
   #services = null;
   #off = [];
   #recognition = null;
   #listening = false;
+  #overrides = {};
 
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
   }
 
+  get config() { return resolveComponentConfig(this, this.#overrides); }
+  set config(overrides) {
+    if (overrides == null || typeof overrides !== 'object') return;
+    for (const [key, value] of Object.entries(overrides)) this.#applyConfig(key, value);
+  }
+
+  #applyConfig(key, value) {
+    if (!(key in this.constructor.configSchema)) return;
+    this.#overrides[key] = value;
+    this.setAttribute(keyToAttr(key), String(value));
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (oldValue === newValue || !this.shadowRoot?.childElementCount) return;
+    if (name === 'state') this.#render();
+  }
+
   async connectedCallback() {
+    this.#render();
+
+    this.#services = await whenServices(this);
+  }
+
+  #render() {
+    const design = this.getAttribute('state') === 'design';
     this.shadowRoot.innerHTML = `
       <style>
 ${THEME_CSS}
@@ -43,11 +78,12 @@ ${CONTROL_CSS}
           background: var(--mcs-bg);
         }
         .row { display: flex; align-items: center; gap: 0.5rem; }
-        button { padding: 0.375rem 0.75rem; cursor: pointer; background: var(--mcs-surface); }
-        button[aria-pressed="true"] { background: var(--mcs-accent); color: var(--mcs-accent-fg); border-color: transparent; }
-        button[disabled] { cursor: not-allowed; color: var(--mcs-muted); }
+        .row button { padding: 0.375rem 0.75rem; cursor: pointer; background: var(--mcs-surface); }
+        .row button[aria-pressed="true"] { background: var(--mcs-accent); color: var(--mcs-accent-fg); border-color: transparent; }
+        .row button[disabled] { cursor: not-allowed; color: var(--mcs-muted); }
         .note { margin: 0; font-size: 0.8125rem; color: var(--mcs-muted); }
         :focus-visible { outline: 2px solid var(--mcs-accent); outline-offset: 2px; }
+${design ? CONFIG_FORM_CSS : ''}
       </style>
       <div class="row">
         <button type="button" class="mic" aria-pressed="false">🎤 Hold to talk</button>
@@ -72,8 +108,7 @@ ${CONTROL_CSS}
       mic.addEventListener('pointerleave', () => this.stop());
     }
     speak.addEventListener('click', () => this.#toggleSpeech(speak));
-
-    this.#services = await whenServices(this);
+    if (design) renderConfigForm(this.shadowRoot, this.constructor.configSchema, this.config, (k, v) => this.#applyConfig(k, v));
   }
 
   disconnectedCallback() {

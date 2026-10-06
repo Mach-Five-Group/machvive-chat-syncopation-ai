@@ -13,19 +13,53 @@
  */
 import { THEME_CSS } from '../machvive-chat-syncopation-services/theme.js';
 import { findServices, SERVICES_TAG } from '../machvive-chat-syncopation-services/machvive-chat-syncopation-services.js';
+import { resolveComponentConfig, keyToAttr } from '../machvive-chat-syncopation-services/component-config.js';
+import { renderConfigForm, CONFIG_FORM_CSS } from '../machvive-chat-syncopation-services/config-form.js';
 
 const CONFIG_ATTRS = ['transport', 'model', 'endpoint', 'persist', 'max-turns', 'streaming'];
 
 export class MachviveChatSyncopation extends HTMLElement {
+  static configSchema = {
+    height: { type: 'string', default: '', label: 'Height', description: 'Surface height (CSS length); empty uses the 32rem default' }
+  };
+
+  static get observedAttributes() {
+    return [...Object.keys(this.configSchema).map(keyToAttr), 'state'];
+  }
+
   #services = null;
+  #overrides = {};
 
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
   }
 
+  get config() { return resolveComponentConfig(this, this.#overrides); }
+  set config(overrides) {
+    if (overrides == null || typeof overrides !== 'object') return;
+    for (const [key, value] of Object.entries(overrides)) this.#applyConfig(key, value);
+  }
+
+  #applyConfig(key, value) {
+    if (!(key in this.constructor.configSchema)) return;
+    this.#overrides[key] = value;
+    this.setAttribute(keyToAttr(key), String(value));
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (oldValue === newValue || !this.shadowRoot?.childElementCount) return;
+    this.#render();
+  }
+
   connectedCallback() {
     this.#services = findServices(this) ?? this.#createServices();
+    this.#render();
+  }
+
+  #render() {
+    const { height } = this.config;
+    const design = this.getAttribute('state') === 'design';
     this.shadowRoot.innerHTML = `
       <style>
 ${THEME_CSS}
@@ -46,11 +80,14 @@ ${THEME_CSS}
         header, footer { flex: 0 0 auto; }
         .body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
         header::slotted(*) { display: block; }
+${design ? CONFIG_FORM_CSS : ''}
       </style>
       <header><slot name="header"></slot></header>
       <div class="body"><slot></slot></div>
       <footer><slot name="footer"></slot></footer>
     `;
+    if (height) this.style.setProperty('--mcs-height', height);
+    if (design) renderConfigForm(this.shadowRoot, this.constructor.configSchema, this.config, (k, v) => this.#applyConfig(k, v));
   }
 
   /** Mirrors the container's config attributes onto the services it created. */

@@ -16,6 +16,12 @@ export {
   Cache,
   resolveConfig,
   DEFAULTS,
+  Recorder,
+  resolveComponentConfig,
+  attrToKey,
+  keyToAttr,
+  renderConfigForm,
+  CONFIG_FORM_CSS,
   createRecord,
   ROLES,
   isPending,
@@ -38,3 +44,5 @@ export type {
 export type { Unsubscribe } from './src/wc/machvive-chat-syncopation-services/pubsub.js';
 export type { SyncopationConfig, Transport } from './src/wc/machvive-chat-syncopation-services/config.js';
 export type { ConversationJSON } from './src/wc/machvive-chat-syncopation-services/conversation.js';
+export type { ConfigSchema, ConfigField } from './src/wc/machvive-chat-syncopation-services/component-config.js';
+export type { RecordedEvent, RecordingJSON } from './src/wc/machvive-chat-syncopation-services/recorder.js';

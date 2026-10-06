@@ -157,6 +157,50 @@ when you let the container create its own.
 | `max-turns` | `200` | Oldest turns are trimmed past this |
 | `streaming` | `true` | Whether transports stream |
 | `theme` | *OS* | `light` or `dark`, overriding `prefers-color-scheme` |
+| `state` | — | `design` renders a configuration form (see below) |
+
+Every element in the collection — the services element included — declares a
+`static configSchema`. One schema drives all three ways of configuring an
+instance, so they can never drift apart:
+
+- **Attributes** (`placeholder="…"`, `max-turns="200"`)
+- **The `config` object** — `prompt.config = { placeholder: 'Ask…' }` overrides
+  individual keys and reflects them back to the attributes
+- **Design state** — set `state="design"` and the element renders an isomorphic
+  form generated from its own schema; edits apply live and persist to attributes
+
+```html
+<machvive-chat-syncopation-prompt
+  placeholder="How can we help?"
+  state="design"></machvive-chat-syncopation-prompt>
+```
+
+```js
+prompt.config = { placeholder: 'Changed from page code' };
+console.log(prompt.configSchema); // the keys, types, defaults, labels
+```
+
+## Recording the bus
+
+Every emission on the bus can be captured and replayed. The services element owns
+a `Recorder`, subscribed to the wildcard topic, so it sees topics it was never
+taught — including an integrator's own. Payloads are snapshotted at emit time, so
+a streaming turn that mutates later does not rewrite the recording.
+
+```js
+services.recorder.start();
+await services.send('hello');
+services.recorder.stop();
+
+const json = services.recorder.export();        // mcs-recording@1 JSON
+recorder.import(json);                           // load it back, here or elsewhere
+await recorder.replay();                         // re-emit onto the bus, instantly
+await recorder.replay({ pace: 'realtime' });     // …or with the original timing
+```
+
+Replay re-emits the events, so components re-react exactly as they did live —
+that is what makes a recording a test fixture, a support artifact, or a demo
+script with no extra machinery.
 
 ## Writing a transport
 

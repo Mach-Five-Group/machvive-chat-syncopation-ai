@@ -13,8 +13,18 @@
 import { THEME_CSS, CONTROL_CSS } from '../machvive-chat-syncopation-services/theme.js';
 import { whenServices } from '../machvive-chat-syncopation-services/machvive-chat-syncopation-services.js';
 import { transports } from '../machvive-chat-syncopation-services/daemon.js';
+import { resolveComponentConfig, keyToAttr } from '../machvive-chat-syncopation-services/component-config.js';
+import { renderConfigForm, CONFIG_FORM_CSS } from '../machvive-chat-syncopation-services/config-form.js';
 
 export class MachviveChatSyncopationCli extends HTMLElement {
+  static configSchema = {
+    placeholder: { type: 'string', default: 'message, or /help', label: 'Placeholder', description: 'Empty-field hint text' }
+  };
+
+  static get observedAttributes() {
+    return [...Object.keys(this.configSchema).map(keyToAttr), 'state'];
+  }
+
   #services = null;
   #field = null;
   #out = null;
@@ -23,13 +33,39 @@ export class MachviveChatSyncopationCli extends HTMLElement {
   #history = [];
   #cursor = 0;
   #commands = new Map();
+  #overrides = {};
 
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
   }
 
+  get config() { return resolveComponentConfig(this, this.#overrides); }
+  set config(overrides) {
+    if (overrides == null || typeof overrides !== 'object') return;
+    for (const [key, value] of Object.entries(overrides)) this.#applyConfig(key, value);
+  }
+
+  #applyConfig(key, value) {
+    if (!(key in this.constructor.configSchema)) return;
+    this.#overrides[key] = value;
+    this.setAttribute(keyToAttr(key), String(value));
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (oldValue === newValue || !this.shadowRoot?.childElementCount) return;
+    this.#render();
+  }
+
   async connectedCallback() {
+    this.#render();
+
+    this.#registerBuiltins();
+    this.#services = await whenServices(this);
+  }
+
+  #render() {
+    const design = this.getAttribute('state') === 'design';
     this.shadowRoot.innerHTML = `
       <style>
 ${THEME_CSS}
@@ -56,21 +92,20 @@ ${CONTROL_CSS}
         }
         :focus-visible { outline: 2px solid var(--mcs-accent); outline-offset: 2px; }
         .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+${design ? CONFIG_FORM_CSS : ''}
       </style>
       <p class="out" role="status" aria-live="polite"></p>
       <div class="row">
         <span class="sigil" aria-hidden="true">&gt;</span>
         <label class="sr" for="cli">Command or message</label>
-        <input id="cli" type="text" autocomplete="off" spellcheck="false"
-               placeholder="message, or /help" />
+        <input id="cli" type="text" autocomplete="off" spellcheck="false" />
       </div>
     `;
     this.#field = this.shadowRoot.querySelector('input');
+    this.#field.placeholder = this.config.placeholder;
     this.#out = this.shadowRoot.querySelector('.out');
     this.#field.addEventListener('keydown', this.#keydown);
-
-    this.#registerBuiltins();
-    this.#services = await whenServices(this);
+    if (design) renderConfigForm(this.shadowRoot, this.constructor.configSchema, this.config, (k, v) => this.#applyConfig(k, v));
   }
 
   /**

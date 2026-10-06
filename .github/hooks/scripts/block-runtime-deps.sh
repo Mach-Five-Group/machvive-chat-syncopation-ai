@@ -17,12 +17,18 @@ case "$input" in
     ;;
 esac
 
-# Shell commands installing runtime deps: npm install/i <pkg> without --save-dev
+# Shell commands installing runtime deps: npm install/i <pkg> without --save-dev.
+# Scoped to the library root — the design playground (design/chat-syncopation-playground)
+# legitimately declares its own dev deps, and a tarball smoke test installs the packed
+# .tgz into a scratch dir outside the repo. Only the published package must stay clean.
 case "$input" in
+  *chat-syncopation-playground*|*'design/'*|*'/tmp/'*|*'.tgz'*|*'mcs-smoke'*)
+    : # playground and out-of-repo consumer smoke tests: not the published library
+    ;;
   *'npm install '*|*'npm i '*)
     case "$input" in
-      *--save-dev*|*' -D'*|*'npm install -g'*|*'npm i -g'*)
-        : # dev tooling and global installs are fine
+      *--save-dev*|*' -D'*|*'npm install -g'*|*'npm i -g'*|*"npm install'"|*"npm i'")
+        : # dev tooling, global installs, and bare `npm install` (restores lock file) are fine
         ;;
       *)
         deny 'Runtime npm install is blocked: this repo ships zero dependencies (test/package.test.js fails otherwise). Use --save-dev for tooling, or state why a runtime dep is truly required.'

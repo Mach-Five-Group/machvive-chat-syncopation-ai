@@ -12,18 +12,65 @@
  */
 import { THEME_CSS, CONTROL_CSS } from '../machvive-chat-syncopation-services/theme.js';
 import { whenServices } from '../machvive-chat-syncopation-services/machvive-chat-syncopation-services.js';
+import { resolveComponentConfig, keyToAttr } from '../machvive-chat-syncopation-services/component-config.js';
+import { renderConfigForm, CONFIG_FORM_CSS } from '../machvive-chat-syncopation-services/config-form.js';
 
 export class MachviveChatSyncopationHistory extends HTMLElement {
+  static configSchema = {
+    heading: { type: 'string', default: 'History', label: 'Heading', description: 'Panel title' },
+    maxHeight: { type: 'string', default: '', label: 'Max height', description: 'CSS length for the list; empty uses the 14rem default' }
+  };
+
+  static get observedAttributes() {
+    return [...Object.keys(this.configSchema).map(keyToAttr), 'state'];
+  }
+
   #services = null;
   #off = [];
   #list = null;
+  #overrides = {};
 
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
   }
 
+  get config() { return resolveComponentConfig(this, this.#overrides); }
+  set config(overrides) {
+    if (overrides == null || typeof overrides !== 'object') return;
+    for (const [key, value] of Object.entries(overrides)) this.#applyConfig(key, value);
+  }
+
+  #applyConfig(key, value) {
+    if (!(key in this.constructor.configSchema)) return;
+    this.#overrides[key] = value;
+    this.setAttribute(keyToAttr(key), String(value));
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (oldValue === newValue || !this.shadowRoot?.childElementCount) return;
+    this.#render();
+  }
+
   async connectedCallback() {
+    this.#render();
+
+    this.#services = await whenServices(this);
+    if (!this.#services || !this.isConnected) {
+      this.#note('No <machvive-chat-syncopation-services> found.');
+      return;
+    }
+    // Only resaved conversations change the stored set, so refreshing on the
+    // persist writes is enough — no polling.
+    this.#off = [
+      this.#services.bus.on('record:added', () => this.refresh()),
+      this.#services.bus.on('conversation:cleared', () => this.refresh())
+    ];
+    await this.refresh();
+  }
+
+  #render() {
+    const design = this.getAttribute('state') === 'design';
     this.shadowRoot.innerHTML = `
       <style>
 ${THEME_CSS}
@@ -47,8 +94,8 @@ ${CONTROL_CSS}
           border-bottom: 1px solid var(--mcs-border);
         }
         h2 { margin: 0; font-size: 0.875rem; font-weight: 600; flex: 1 1 auto; }
-        button { padding: 0.25rem 0.5rem; cursor: pointer; font-size: 0.75rem; }
-        button.danger { color: var(--mcs-danger); }
+        header button { padding: 0.25rem 0.5rem; cursor: pointer; font-size: 0.75rem; }
+        header button.danger { color: var(--mcs-danger); }
         ul { margin: 0; padding: 0; list-style: none; max-height: var(--mcs-history-height, 14rem); overflow-y: auto; }
         li { display: flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.5rem; border-bottom: 1px solid var(--mcs-border); }
         li:last-child { border-bottom: 0; }
@@ -57,31 +104,22 @@ ${CONTROL_CSS}
         .count { color: var(--mcs-muted); font-size: 0.75rem; }
         .note { margin: 0; padding: 0.5rem; color: var(--mcs-muted); }
         :focus-visible { outline: 2px solid var(--mcs-accent); outline-offset: 2px; }
+${design ? CONFIG_FORM_CSS : ''}
       </style>
       <header>
-        <h2>History</h2>
+        <h2></h2>
         <button type="button" class="export">Export all</button>
         <button type="button" class="danger forget">Delete all</button>
       </header>
       <ul></ul>
       <p class="note"></p>
     `;
+    this.shadowRoot.querySelector('h2').textContent = this.config.heading;
+    if (this.config.maxHeight) this.style.setProperty('--mcs-history-height', this.config.maxHeight);
     this.#list = this.shadowRoot.querySelector('ul');
     this.shadowRoot.querySelector('.export').addEventListener('click', () => this.export());
     this.shadowRoot.querySelector('.forget').addEventListener('click', () => this.forgetAll());
-
-    this.#services = await whenServices(this);
-    if (!this.#services || !this.isConnected) {
-      this.#note('No <machvive-chat-syncopation-services> found.');
-      return;
-    }
-    // Only resaved conversations change the stored set, so refreshing on the
-    // persist writes is enough — no polling.
-    this.#off = [
-      this.#services.bus.on('record:added', () => this.refresh()),
-      this.#services.bus.on('conversation:cleared', () => this.refresh())
-    ];
-    await this.refresh();
+    if (design) renderConfigForm(this.shadowRoot, this.constructor.configSchema, this.config, (k, v) => this.#applyConfig(k, v));
   }
 
   disconnectedCallback() {

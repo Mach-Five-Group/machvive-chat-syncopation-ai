@@ -95,7 +95,9 @@ export class Daemon {
         status: 'error',
         meta: { ...reply.meta, [META.ERROR]: String(err?.message ?? err) }
       });
-      this.#bus?.emit('daemon:error', { id: reply.id, error: err });
+      // Plain data, never the live Error: every bus payload must survive JSON
+      // round-tripping so a bus recording (Recorder) loses nothing.
+      this.#bus?.emit('daemon:error', { id: reply.id, error: String(err?.message ?? err), name: err?.name ?? 'Error' });
     } finally {
       this.#abort = null;
       this.#bus?.emit('daemon:idle', { id: reply.id });
