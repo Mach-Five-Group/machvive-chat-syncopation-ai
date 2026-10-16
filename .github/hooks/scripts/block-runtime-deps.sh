@@ -2,6 +2,11 @@
 # Blocks agent tool calls that would add a runtime dependency to this
 # dependency-free package (AGENTS.md, test/package.test.js assert it).
 # Input: hook JSON on stdin. Output: permissionDecision JSON on stdout.
+#
+# The guard is absolute by design — no whitelisted paths or commands. An escape
+# hatch is where the invariant quietly dies. Work that legitimately needs npm in
+# another repo or a scratch dir runs outside this hook's workspace, or with the
+# hook temporarily disabled by the user — a deliberate act, not a baked-in bypass.
 input=$(cat)
 
 deny() {
@@ -9,26 +14,24 @@ deny() {
   exit 0
 }
 
-# File edits introducing a "dependencies" block into package.json
-# (match literal and JSON-escaped quotes — tool payloads arrive escaped)
+# The runtime-dependency manifest key, quoted both literally and JSON-escaped.
+DEPS='"'"'dependencies'"'"'
+DEPS_ESC='\"dependencies\"'
+
+# File edits introducing a runtime-dependency block into package.json
 case "$input" in
-  *package.json*'"dependencies"'*|*package.json*'\"dependencies\"'*)
-    deny 'This package is dependency-free by construction. Do not add a runtime dependencies block to package.json (an external npmi script keeps re-adding machvive-webmcp-ai — remove it instead). Dev-only tooling goes in devDependencies. See AGENTS.md.'
+  *package.json*"$DEPS"*|*package.json*"$DEPS_ESC"*)
+    deny 'This package is dependency-free by construction. Do not add a runtime dependency block to package.json (an external npmi script keeps re-adding machvive-webmcp-ai — remove it instead). Dev-only tooling goes in devDependencies. See AGENTS.md.'
     ;;
 esac
 
-# Shell commands installing runtime deps: npm install/i <pkg> without --save-dev.
-# Scoped to the library root — the design playground, tarball smoke tests, and other
-# repos (the Hugo homepage consumes this package as a normal dependency) are all
-# legitimate. Only the published library's own package.json must stay clean.
+# Shell commands installing a runtime dependency: npm install/i <pkg> with no
+# --save-dev / -D / -g flag and not a bare lock-file restore.
 case "$input" in
-  *chat-syncopation-playground*|*'design/'*|*'/tmp/'*|*'.tgz'*|*'mcs-smoke'*|*'mcs-verify'*|*'machvive_hugo'*|*'../'*)
-    : # playground, consumer smoke tests, and sibling repos: not the published library
-    ;;
   *'npm install '*|*'npm i '*)
     case "$input" in
-      *--save-dev*|*' -D'*|*'npm install -g'*|*'npm i -g'*|*"npm install'"|*"npm i'")
-        : # dev tooling, global installs, and bare `npm install` (restores lock file) are fine
+      *--save-dev*|*' -D'*|*'npm install -g'*|*'npm i -g'*|*"npm install'"|*"npm i'"*)
+        : # dev tooling, global installs, and bare `npm install` (restores the lock file) are fine
         ;;
       *)
         deny 'Runtime npm install is blocked: this repo ships zero dependencies (test/package.test.js fails otherwise). Use --save-dev for tooling, or state why a runtime dep is truly required.'
