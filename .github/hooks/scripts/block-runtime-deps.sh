@@ -18,12 +18,12 @@ case "$input" in
 esac
 
 # Shell commands installing runtime deps: npm install/i <pkg> without --save-dev.
-# Scoped to the library root — the design playground (design/chat-syncopation-playground)
-# legitimately declares its own dev deps, and a tarball smoke test installs the packed
-# .tgz into a scratch dir outside the repo. Only the published package must stay clean.
+# Scoped to the library root — the design playground, tarball smoke tests, and other
+# repos (the Hugo homepage consumes this package as a normal dependency) are all
+# legitimate. Only the published library's own package.json must stay clean.
 case "$input" in
-  *chat-syncopation-playground*|*'design/'*|*'/tmp/'*|*'.tgz'*|*'mcs-smoke'*)
-    : # playground and out-of-repo consumer smoke tests: not the published library
+  *chat-syncopation-playground*|*'design/'*|*'/tmp/'*|*'.tgz'*|*'mcs-smoke'*|*'mcs-verify'*|*'machvive_hugo'*|*'../'*)
+    : # playground, consumer smoke tests, and sibling repos: not the published library
     ;;
   *'npm install '*|*'npm i '*)
     case "$input" in

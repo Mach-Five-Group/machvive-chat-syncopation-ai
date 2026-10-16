@@ -115,7 +115,11 @@ test('the source makes no network requests', () => {
         );
       }
       const urls = source.match(/https?:\/\/[^\s'"`)]+/g) ?? [];
-      const offenders = urls.filter((u) => !u.startsWith('https://webmachinelearning') && !u.includes('example'));
+      // The SVG xmlns in an icon data-URI is a spec identifier, not a fetch —
+      // the browser never resolves it. Whitelist it explicitly so the invariant
+      // (no real network references) stays asserted without a false positive.
+      const inert = (u) => u === 'http://www.w3.org/2000/svg';
+      const offenders = urls.filter((u) => !inert(u) && !u.startsWith('https://webmachinelearning') && !u.includes('example'));
       assert.deepEqual(offenders, [], `${dir}/${file} references ${offenders.join(', ')}`);
     }
   }

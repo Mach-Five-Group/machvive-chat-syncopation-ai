@@ -9,7 +9,7 @@
  * someone back down while they are reading earlier context is the single most
  * common way a chat surface becomes unusable.
  */
-import { THEME_CSS } from '../machvive-chat-syncopation-services/theme.js';
+import { THEME_CSS, motifCSSOutput } from '../machvive-chat-syncopation-services/theme.js';
 import { whenServices } from '../machvive-chat-syncopation-services/machvive-chat-syncopation-services.js';
 import { resolveComponentConfig, keyToAttr } from '../machvive-chat-syncopation-services/component-config.js';
 import { renderConfigForm, CONFIG_FORM_CSS } from '../machvive-chat-syncopation-services/config-form.js';
@@ -22,7 +22,7 @@ export class MachviveChatSyncopationCanvas extends HTMLElement {
   };
 
   static get observedAttributes() {
-    return [...Object.keys(this.configSchema).map(keyToAttr), 'state'];
+    return Object.keys(this.configSchema).map(keyToAttr);
   }
 
   #off = [];
@@ -51,18 +51,19 @@ export class MachviveChatSyncopationCanvas extends HTMLElement {
 
   attributeChangedCallback(name, oldValue, newValue) {
     if (oldValue === newValue || !this.shadowRoot?.childElementCount) return;
-    if (name === 'state') {
-      // Rebuilding the shell detaches every rendered node. Resync from the
-      // conversation — the source of truth — rather than re-appending nodes
-      // that may no longer match it (a clear() during design state leaves the
-      // map holding records the conversation no longer has).
-      this.#render();
-      this.#resync();
-    } else if (name === 'empty-text') {
+    if (name === 'empty-text') {
       const empty = this.shadowRoot.querySelector('.empty');
       if (empty) empty.textContent = this.config.emptyText;
     }
   }
+
+  // The surface state is inherited from services. On a design rebuild the shell
+  // detaches every rendered node, so resync from the conversation — the source
+  // of truth — rather than re-appending nodes that may no longer match it.
+  #onStateChanged = () => {
+    this.#render();
+    this.#resync();
+  };
 
   async connectedCallback() {
     this.#render();
@@ -76,16 +77,18 @@ export class MachviveChatSyncopationCanvas extends HTMLElement {
       services.bus.on('record:added', (r) => this.#upsert(r)),
       services.bus.on('record:appended', ({ record }) => this.#upsert(record)),
       services.bus.on('record:updated', (r) => this.#upsert(r)),
-      services.bus.on('conversation:cleared', () => this.#reset())
+      services.bus.on('conversation:cleared', () => this.#reset()),
+      services.bus.on('state:changed', this.#onStateChanged)
     ];
     this.#toggleEmpty();
   }
 
   #render() {
-    const design = this.getAttribute('state') === 'design';
+    const design = this.#services?.state === 'design';
     this.shadowRoot.innerHTML = `
       <style>
 ${THEME_CSS}
+${motifCSSOutput()}
         :host {
           display: block;
           flex: 1 1 auto;

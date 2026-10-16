@@ -15,7 +15,8 @@ import { resolveConfig } from './config.js';
 import { Recorder } from './recorder.js';
 import { resolveComponentConfig, keyToAttr } from './component-config.js';
 import { renderConfigForm, CONFIG_FORM_CSS } from './config-form.js';
-import { THEME_CSS } from './theme.js';
+import { THEME_CSS, registerMotif, motifNames } from './theme.js';
+import { CHAT_STATES, CHAT_STATE_ATTR, readChatState } from './state.js';
 
 export { PubSub } from './pubsub.js';
 export { Conversation } from './conversation.js';
@@ -25,9 +26,12 @@ export { resolveConfig, DEFAULTS } from './config.js';
 export { Recorder } from './recorder.js';
 export { resolveComponentConfig, attrToKey, keyToAttr } from './component-config.js';
 export { renderConfigForm, CONFIG_FORM_CSS } from './config-form.js';
+export { CHAT_STATES, CHAT_STATE_ATTR, readChatState } from './state.js';
 export { createRecord, ROLES, isPending } from './record.js';
 export { META, annotate, readMeta, userMeta } from './metadata.js';
-export { THEME_CSS, CONTROL_CSS } from './theme.js';
+export { THEME_CSS, CONTROL_CSS, registerMotif, motifNames, motifCSSOutput } from './theme.js';
+export { MOTIFS, MOTIF_NAMES, MOTIF_TOKENS } from './motifs.js';
+export { ICON_ROOT_CSS, ICON_CSS, ICON_NAMES, ICON_STYLE_ID } from './icons.js';
 
 export const SERVICES_TAG = 'machvive-chat-syncopation-services';
 
@@ -90,7 +94,7 @@ export class MachviveChatSyncopationServices extends HTMLElement {
   };
 
   static get observedAttributes() {
-    return [...Object.keys(this.configSchema).map(keyToAttr), 'state'];
+    return [...Object.keys(this.configSchema).map(keyToAttr), CHAT_STATE_ATTR];
   }
 
   #bus = new PubSub();
@@ -133,8 +137,14 @@ export class MachviveChatSyncopationServices extends HTMLElement {
 
   attributeChangedCallback(name, oldValue, newValue) {
     if (oldValue === newValue) return;
-    if (name === 'state') {
+    if (name === CHAT_STATE_ATTR) {
+      const to = readChatState(this);
+      const from = readChatState({ getAttribute: () => oldValue }, { warn: false });
       if (this.shadowRoot) this.#render();
+      // A state transition is a first-class event: components react, and the
+      // recorder captures it like any other turn.
+      this.#bus.emit('state:changed', { from, to });
+      this.dispatchEvent(new CustomEvent('chat-state-changed', { detail: { from, to }, bubbles: true, composed: true }));
       return;
     }
     if (!this.#booted || !this.#config) return;
@@ -193,7 +203,7 @@ export class MachviveChatSyncopationServices extends HTMLElement {
   }
 
   #render() {
-    const design = this.getAttribute('state') === 'design';
+    const design = this.state === 'design';
     this.shadowRoot.innerHTML = `
       <style>
         ${design ? THEME_CSS : ''}
@@ -206,11 +216,36 @@ export class MachviveChatSyncopationServices extends HTMLElement {
     if (design) renderConfigForm(this.shadowRoot, this.constructor.configSchema, this.config, (k, v) => this.#applyConfig(k, v));
   }
 
+  /**
+   * The surface state — `enabled | disabled | loading | design`. Owned here so
+   * a surface has exactly one. Setting it reflects to the attribute, which
+   * announces `state:changed` on the bus and re-renders the design form.
+   */
+  get state() { return readChatState(this); }
+  set state(value) {
+    if (value == null) { this.removeAttribute(CHAT_STATE_ATTR); return; }
+    this.setAttribute(CHAT_STATE_ATTR, String(value).toLowerCase());
+  }
+
   get bus() { return this.#bus; }
   get conversation() { return this.#conversation; }
   get daemon() { return this.#daemon; }
   get cache() { return this.#cache; }
   get recorder() { return this.#recorder; }
+
+  /**
+   * Registers a motif — a named light/dark token bundle — selectable with
+   * `theme="<name>"`. Registered like transports: built-ins merge under custom
+   * ones, and components re-render so the new tokens apply. Announces on the bus.
+   */
+  registerTheme(name, bundle) {
+    registerMotif(name, bundle);
+    this.#bus.emit('theme:registered', { name });
+    return this;
+  }
+
+  /** Every selectable motif name, built-ins and registered alike. */
+  get themes() { return motifNames(); }
 
   /** Convenience for page code; components use the daemon directly. */
   send(text) { return this.#daemon?.send(text); }

@@ -9,7 +9,7 @@
  * Capped and opt-in. It holds the last N events in memory and is a development
  * tool, not telemetry: nothing leaves the page, and importing it emits nothing.
  */
-import { THEME_CSS, CONTROL_CSS } from '../machvive-chat-syncopation-services/theme.js';
+import { THEME_CSS, CONTROL_CSS, motifCSSOutput } from '../machvive-chat-syncopation-services/theme.js';
 import { whenServices } from '../machvive-chat-syncopation-services/machvive-chat-syncopation-services.js';
 import { resolveComponentConfig, keyToAttr } from '../machvive-chat-syncopation-services/component-config.js';
 import { renderConfigForm, CONFIG_FORM_CSS } from '../machvive-chat-syncopation-services/config-form.js';
@@ -20,7 +20,7 @@ export class MachviveChatSyncopationInspector extends HTMLElement {
   };
 
   static get observedAttributes() {
-    return [...Object.keys(this.configSchema).map(keyToAttr), 'state'];
+    return Object.keys(this.configSchema).map(keyToAttr);
   }
 
   #services = null;
@@ -49,10 +49,9 @@ export class MachviveChatSyncopationInspector extends HTMLElement {
 
   get limit() { return this.config.limit; }
   get events() { return [...this.#events]; }
-
   attributeChangedCallback(name, oldValue, newValue) {
     if (oldValue === newValue || !this.shadowRoot?.childElementCount) return;
-    if (name === 'state') this.#render();
+    this.#render();
   }
 
   async connectedCallback() {
@@ -64,15 +63,20 @@ export class MachviveChatSyncopationInspector extends HTMLElement {
         'No <machvive-chat-syncopation-services> found — the inspector reads that element’s bus.';
       return;
     }
-    this.#off = [this.#services.bus.on('*', (event) => this.#record(event))];
+    this.#off = [
+      this.#services.bus.on('*', (event) => this.#record(event)),
+      this.#services.bus.on('state:changed', () => this.#render())
+    ];
+    this.#render();
   }
 
   #render() {
-    const design = this.getAttribute('state') === 'design';
+    const design = this.#services?.state === 'design';
     this.shadowRoot.innerHTML = `
       <style>
 ${THEME_CSS}
 ${CONTROL_CSS}
+${motifCSSOutput()}
         :host {
           display: block;
           font-family: var(--mcs-mono);

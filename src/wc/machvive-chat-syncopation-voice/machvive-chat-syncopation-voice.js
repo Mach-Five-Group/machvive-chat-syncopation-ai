@@ -10,7 +10,7 @@
  * microphone that transmits the moment it recognises a phrase will eventually
  * send a half-sentence, or a conversation happening in the room.
  */
-import { THEME_CSS, CONTROL_CSS } from '../machvive-chat-syncopation-services/theme.js';
+import { THEME_CSS, CONTROL_CSS, motifCSSOutput } from '../machvive-chat-syncopation-services/theme.js';
 import { whenServices } from '../machvive-chat-syncopation-services/machvive-chat-syncopation-services.js';
 import { resolveComponentConfig, keyToAttr } from '../machvive-chat-syncopation-services/component-config.js';
 import { renderConfigForm, CONFIG_FORM_CSS } from '../machvive-chat-syncopation-services/config-form.js';
@@ -26,13 +26,16 @@ export class MachviveChatSyncopationVoice extends HTMLElement {
   };
 
   static get observedAttributes() {
-    return [...Object.keys(this.configSchema).map(keyToAttr), 'state'];
+    return Object.keys(this.configSchema).map(keyToAttr);
   }
 
   #services = null;
   #off = [];
+  #speechOff = [];
   #recognition = null;
   #listening = false;
+  #speaking = false;
+  #composer = null;
   #overrides = {};
 
   constructor() {
@@ -54,21 +57,63 @@ export class MachviveChatSyncopationVoice extends HTMLElement {
 
   attributeChangedCallback(name, oldValue, newValue) {
     if (oldValue === newValue || !this.shadowRoot?.childElementCount) return;
-    if (name === 'state') this.#render();
+    this.#render();
   }
 
   async connectedCallback() {
     this.#render();
 
     this.#services = await whenServices(this);
+    if (!this.#services || !this.isConnected) return;
+    this.#off.push(this.#services.bus.on('state:changed', () => this.#render()));
+    // The composer may not have upgraded yet; wait for it before registering.
+    await customElements.whenDefined('machvive-chat-syncopation-prompt');
+    if (!this.isConnected) return;
+    this.#registerWithComposer();
+    this.#render();
+  }
+
+  /**
+   * One mic per surface. When a composer shares this surface, voice registers
+   * its actions into the composer's action row and hides its own — the prompt
+   * owns the row layout. Standalone (no composer), voice keeps its own buttons.
+   */
+  #registerWithComposer() {
+    const prompt = this.#findComposer();
+    if (!prompt || typeof prompt.registerAction !== 'function') return false;
+    this.#composer = prompt;
+    // Mic is press-and-hold; speak toggles on click.
+    prompt.registerAction('voice-mic', {
+      icon: 'mic', label: 'Hold to talk', order: 10,
+      onPress: () => this.start(),
+      onRelease: () => this.stop()
+    });
+    prompt.registerAction('voice-speak', {
+      icon: 'no-sound', label: 'Read replies', order: 20,
+      run: () => this.#toggleSpeech()
+    });
+    return true;
+  }
+
+  #findComposer() {
+    // The composer is a sibling within the same surface. Voice and the composer
+    // share a container or services element in the light DOM; search from the
+    // nearest shared ancestor's subtree.
+    let scope = this.parentElement;
+    while (scope && !scope.querySelector?.('machvive-chat-syncopation-prompt')) {
+      scope = scope.parentElement ?? scope.getRootNode?.()?.host ?? null;
+    }
+    return scope?.querySelector?.('machvive-chat-syncopation-prompt') ?? null;
   }
 
   #render() {
-    const design = this.getAttribute('state') === 'design';
+    const design = this.#services?.state === 'design';
+    const integrated = Boolean(this.#composer);
     this.shadowRoot.innerHTML = `
       <style>
 ${THEME_CSS}
 ${CONTROL_CSS}
+${motifCSSOutput()}
         :host {
           display: block;
           flex: 0 0 auto;
@@ -85,7 +130,7 @@ ${CONTROL_CSS}
         :focus-visible { outline: 2px solid var(--mcs-accent); outline-offset: 2px; }
 ${design ? CONFIG_FORM_CSS : ''}
       </style>
-      <div class="row">
+      <div class="row" ${integrated ? 'hidden' : ''}>
         <button type="button" class="mic" aria-pressed="false">🎤 Hold to talk</button>
         <button type="button" class="speak" aria-pressed="false">🔊 Read replies</button>
       </div>
@@ -157,16 +202,20 @@ ${design ? CONFIG_FORM_CSS : ''}
   /** Reads completed assistant turns. Only completed ones — speaking a stream
    *  chunk by chunk produces stuttered nonsense. */
   #toggleSpeech(button) {
-    const on = button.getAttribute('aria-pressed') !== 'true';
-    button.setAttribute('aria-pressed', String(on));
-    if (!on) {
+    // Speech state is internal so the composer action (no button) and the
+    // standalone button both work. Reflect to whichever control exists.
+    this.#speaking = !this.#speaking;
+    const pressed = String(this.#speaking);
+    button?.setAttribute('aria-pressed', pressed);
+    this.#composer?.shadowRoot?.querySelector('[data-action="voice-speak"]')?.setAttribute('aria-pressed', pressed);
+    if (!this.#speaking) {
       window.speechSynthesis.cancel();
-      for (const off of this.#off) off();
-      this.#off = [];
+      for (const off of this.#speechOff) off();
+      this.#speechOff = [];
       return;
     }
     if (!this.#services) return;
-    this.#off.push(this.#services.bus.on('record:updated', (record) => {
+    this.#speechOff.push(this.#services.bus.on('record:updated', (record) => {
       if (record.role !== 'assistant' || record.status !== 'complete' || !record.text) return;
       const utterance = new SpeechSynthesisUtterance(record.text);
       utterance.lang = this.#recognition?.lang ?? navigator.language;

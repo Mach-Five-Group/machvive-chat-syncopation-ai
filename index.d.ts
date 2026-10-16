@@ -22,6 +22,9 @@ export {
   keyToAttr,
   renderConfigForm,
   CONFIG_FORM_CSS,
+  CHAT_STATES,
+  CHAT_STATE_ATTR,
+  readChatState,
   createRecord,
   ROLES,
   isPending,
@@ -31,6 +34,16 @@ export {
   userMeta,
   THEME_CSS,
   CONTROL_CSS,
+  ICON_ROOT_CSS,
+  ICON_CSS,
+  ICON_NAMES,
+  ICON_STYLE_ID,
+  registerMotif,
+  motifNames,
+  motifCSSOutput,
+  MOTIFS,
+  MOTIF_NAMES,
+  MOTIF_TOKENS,
   findServices,
   whenServices,
   SERVICES_TAG
@@ -46,3 +59,5 @@ export type { SyncopationConfig, Transport } from './src/wc/machvive-chat-syncop
 export type { ConversationJSON } from './src/wc/machvive-chat-syncopation-services/conversation.js';
 export type { ConfigSchema, ConfigField } from './src/wc/machvive-chat-syncopation-services/component-config.js';
 export type { RecordedEvent, RecordingJSON } from './src/wc/machvive-chat-syncopation-services/recorder.js';
+export type { ChatState } from './src/wc/machvive-chat-syncopation-services/state.js';
+export type { MotifBundle, MotifTokens, MotifTokenKey } from './src/wc/machvive-chat-syncopation-services/motifs.js';

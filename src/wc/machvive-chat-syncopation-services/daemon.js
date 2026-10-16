@@ -78,6 +78,9 @@ export class Daemon {
     const transport = this.#transports[this.#config.transport] ?? this.#transports.echo;
     this.#abort = new AbortController();
     const startedAt = Date.now();
+    // A turn starting is as recordable as one ending — the container's wait
+    // state listens for this, and a recording replays it like any other event.
+    this.#bus?.emit('daemon:busy', { id: reply.id });
 
     try {
       for await (const chunk of transport(text, { config: this.#config })) {

@@ -17,6 +17,9 @@ export * from './theme.js';
 export * from './recorder.js';
 export * from './component-config.js';
 export * from './config-form.js';
+export * from './state.js';
+export * from './icons.js';
+export * from './motifs.js';
 // config.js and daemon.js both declare a `Transport` type (a name union vs. the
 // transport function). Re-export explicitly so the wildcard ambiguity resolves:
 // the daemon's function type keeps the short name, the config's becomes explicit.
@@ -45,6 +48,20 @@ export declare class MachviveChatSyncopationServices extends HTMLElement {
    *  overrides are reflected to attributes and announced as `config:changed`. */
   get config(): SyncopationConfig | Record<string, unknown>;
   set config(overrides: Partial<SyncopationConfig>);
+  /**
+   * The surface state, `enabled | disabled | loading | design`. Owned here so a
+   * surface has exactly one; setting it reflects to `data-chat-state`, announces
+   * `state:changed`, and re-renders governed components.
+   */
+  get state(): import('./state.js').ChatState;
+  set state(value: import('./state.js').ChatState);
+  /**
+   * Registers a motif — a named light/dark token bundle — selectable with
+   * `theme="<name>"`. Announces `theme:registered` on the bus.
+   */
+  registerTheme(name: string, bundle: import('./motifs.js').MotifBundle): this;
+  /** Every selectable motif name, built-ins and registered alike. */
+  readonly themes: string[];
   send(text: string): Promise<ChatRecord | null> | undefined;
   /** Registers a transport and, unless told otherwise, selects it. */
   registerTransport(

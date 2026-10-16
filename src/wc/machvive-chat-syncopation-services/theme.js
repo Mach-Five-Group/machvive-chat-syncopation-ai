@@ -67,3 +67,30 @@ export const CONTROL_CSS = `
     border-radius: 8px;
   }
 `;
+
+/**
+ * Registered motifs accumulate here. Components call motifCSS() at render and
+ * interpolate the result after THEME_CSS so a motif's tokens sit later in the
+ * cascade and win. Registration is idempotent per name.
+ */
+import { motifCSS as buildMotifCSS } from './motifs.js';
+
+const registeredMotifs = new Map();
+
+/** Registers a motif's token bundle under a name `theme="<name>"` can select. */
+export function registerMotif(name, bundle) {
+  registeredMotifs.set(name, bundle);
+  return name;
+}
+
+/** Every registered motif name, built-ins included. */
+export function motifNames() { return [...registeredMotifs.keys()]; }
+
+/** The accumulated motif CSS, computed at call time so late registration is seen. */
+export function motifCSSOutput() {
+  return [...registeredMotifs.entries()].map(([name, bundle]) => buildMotifCSS(name, bundle)).join('\n');
+}
+
+// The built-in motifs register at import, alongside the built-in transports.
+import { MOTIFS } from './motifs.js';
+for (const [name, bundle] of Object.entries(MOTIFS)) registerMotif(name, bundle);

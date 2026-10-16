@@ -10,7 +10,7 @@
  *  - The idle nudge fires once per conversation, never on a loop. A surface that
  *    keeps asking whether you are still there is a surface people close.
  */
-import { THEME_CSS, CONTROL_CSS } from '../machvive-chat-syncopation-services/theme.js';
+import { THEME_CSS, CONTROL_CSS, motifCSSOutput } from '../machvive-chat-syncopation-services/theme.js';
 import { whenServices } from '../machvive-chat-syncopation-services/machvive-chat-syncopation-services.js';
 import { resolveComponentConfig, keyToAttr } from '../machvive-chat-syncopation-services/component-config.js';
 import { renderConfigForm, CONFIG_FORM_CSS } from '../machvive-chat-syncopation-services/config-form.js';
@@ -23,7 +23,7 @@ export class MachviveChatSyncopationNudge extends HTMLElement {
   };
 
   static get observedAttributes() {
-    return [...Object.keys(this.configSchema).map(keyToAttr), 'state'];
+    return Object.keys(this.configSchema).map(keyToAttr);
   }
 
   #services = null;
@@ -66,7 +66,9 @@ export class MachviveChatSyncopationNudge extends HTMLElement {
         // the conversation is the context — stale chips just take up space.
         if (record.role === 'user') this.#clearChips();
         this.#resetIdle();
-      })
+      }),
+      // The surface state is inherited from services; re-render when it changes.
+      this.#services.bus.on('state:changed', () => this.#render())
     ];
     this.#resetIdle();
   }
@@ -84,11 +86,12 @@ export class MachviveChatSyncopationNudge extends HTMLElement {
   }
 
   #render() {
-    const design = this.getAttribute('state') === 'design';
+    const design = this.#services?.state === 'design';
     this.shadowRoot.innerHTML = `
       <style>
 ${THEME_CSS}
 ${CONTROL_CSS}
+${motifCSSOutput()}
         :host {
           display: block;
           flex: 0 0 auto;

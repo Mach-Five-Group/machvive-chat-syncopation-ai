@@ -10,7 +10,7 @@
  * and the memory copy — a "clear history" that only hides rows is a lie, and
  * the one place in this collection where that would actually matter.
  */
-import { THEME_CSS, CONTROL_CSS } from '../machvive-chat-syncopation-services/theme.js';
+import { THEME_CSS, CONTROL_CSS, motifCSSOutput } from '../machvive-chat-syncopation-services/theme.js';
 import { whenServices } from '../machvive-chat-syncopation-services/machvive-chat-syncopation-services.js';
 import { resolveComponentConfig, keyToAttr } from '../machvive-chat-syncopation-services/component-config.js';
 import { renderConfigForm, CONFIG_FORM_CSS } from '../machvive-chat-syncopation-services/config-form.js';
@@ -22,7 +22,7 @@ export class MachviveChatSyncopationHistory extends HTMLElement {
   };
 
   static get observedAttributes() {
-    return [...Object.keys(this.configSchema).map(keyToAttr), 'state'];
+    return Object.keys(this.configSchema).map(keyToAttr);
   }
 
   #services = null;
@@ -64,17 +64,19 @@ export class MachviveChatSyncopationHistory extends HTMLElement {
     // persist writes is enough — no polling.
     this.#off = [
       this.#services.bus.on('record:added', () => this.refresh()),
-      this.#services.bus.on('conversation:cleared', () => this.refresh())
+      this.#services.bus.on('conversation:cleared', () => this.refresh()),
+      this.#services.bus.on('state:changed', () => this.#render())
     ];
     await this.refresh();
   }
 
   #render() {
-    const design = this.getAttribute('state') === 'design';
+    const design = this.#services?.state === 'design';
     this.shadowRoot.innerHTML = `
       <style>
 ${THEME_CSS}
 ${CONTROL_CSS}
+${motifCSSOutput()}
         :host {
           display: block;
           font-family: var(--mcs-font);

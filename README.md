@@ -157,7 +157,36 @@ when you let the container create its own.
 | `max-turns` | `200` | Oldest turns are trimmed past this |
 | `streaming` | `true` | Whether transports stream |
 | `theme` | *OS* | `light` or `dark`, overriding `prefers-color-scheme` |
-| `state` | — | `design` renders a configuration form (see below) |
+| `data-chat-state` | `enabled` | The surface state — see below |
+
+## Surface state
+
+One state per surface, owned by the services element and inherited by every
+component it governs. Set it as `data-chat-state` on the services element (or on
+the container, which mirrors it down), or from page code as `services.state`.
+
+| State | Behaviour |
+| --- | --- |
+| `enabled` | Normal operation |
+| `disabled` | Read-only — the composer is inert and the surface dims |
+| `loading` | A progress indication; the composer stays editable and cancellable |
+| `design` | Each component renders its own configuration form |
+
+```html
+<machvive-chat-syncopation-services data-chat-state="design">…</…>
+```
+
+```js
+services.state = 'loading';        // reflects to the attribute
+services.bus.on('state:changed', ({ from, to }) => …);
+```
+
+The state is explicit: leaving it unset, or a typo, warns and falls back to
+`enabled`. Because it lives on the services element, two surfaces on one page
+transition independently — a component can never be in a state its surface
+disagrees with.
+
+## Configuring any component
 
 Every element in the collection — the services element included — declares a
 `static configSchema`. One schema drives all three ways of configuring an
@@ -166,13 +195,14 @@ instance, so they can never drift apart:
 - **Attributes** (`placeholder="…"`, `max-turns="200"`)
 - **The `config` object** — `prompt.config = { placeholder: 'Ask…' }` overrides
   individual keys and reflects them back to the attributes
-- **Design state** — set `state="design"` and the element renders an isomorphic
-  form generated from its own schema; edits apply live and persist to attributes
+- **Design state** — set the surface's `data-chat-state="design"` and every
+  component renders an isomorphic form generated from its own schema; edits apply
+  live and persist to attributes
 
 ```html
-<machvive-chat-syncopation-prompt
-  placeholder="How can we help?"
-  state="design"></machvive-chat-syncopation-prompt>
+<machvive-chat-syncopation-services data-chat-state="design">
+  <machvive-chat-syncopation-prompt placeholder="How can we help?"></machvive-chat-syncopation-prompt>
+</machvive-chat-syncopation-services>
 ```
 
 ```js
@@ -251,6 +281,13 @@ machvive-chat-syncopation {
 
 Dark mode follows `prefers-color-scheme` by default; `theme="light"` or
 `theme="dark"` overrides the OS, and an explicit choice wins in either direction.
+
+### Motifs
+
+A motif is a named bundle of the same tokens — a personality that composes with the
+scheme. Built-ins are `corp` and `artdeco`; select one with `theme="artdeco"` (light
+or dark follows the OS), and register your own with `services.registerTheme(name,
+{ light, dark })`.
 
 ## Browser support
 

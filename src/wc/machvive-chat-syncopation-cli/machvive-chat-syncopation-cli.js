@@ -10,7 +10,7 @@
  * Anything that is not a command is sent as an ordinary message, so this can
  * replace the composer outright rather than sitting beside it.
  */
-import { THEME_CSS, CONTROL_CSS } from '../machvive-chat-syncopation-services/theme.js';
+import { THEME_CSS, CONTROL_CSS, motifCSSOutput } from '../machvive-chat-syncopation-services/theme.js';
 import { whenServices } from '../machvive-chat-syncopation-services/machvive-chat-syncopation-services.js';
 import { transports } from '../machvive-chat-syncopation-services/daemon.js';
 import { resolveComponentConfig, keyToAttr } from '../machvive-chat-syncopation-services/component-config.js';
@@ -22,7 +22,7 @@ export class MachviveChatSyncopationCli extends HTMLElement {
   };
 
   static get observedAttributes() {
-    return [...Object.keys(this.configSchema).map(keyToAttr), 'state'];
+    return Object.keys(this.configSchema).map(keyToAttr);
   }
 
   #services = null;
@@ -57,19 +57,30 @@ export class MachviveChatSyncopationCli extends HTMLElement {
     this.#render();
   }
 
+  #off = [];
+
   async connectedCallback() {
     this.#render();
 
     this.#registerBuiltins();
     this.#services = await whenServices(this);
+    if (!this.#services || !this.isConnected) return;
+    this.#off = [this.#services.bus.on('state:changed', () => this.#render())];
+    this.#render();
+  }
+
+  disconnectedCallback() {
+    for (const off of this.#off) off();
+    this.#off = [];
   }
 
   #render() {
-    const design = this.getAttribute('state') === 'design';
+    const design = this.#services?.state === 'design';
     this.shadowRoot.innerHTML = `
       <style>
 ${THEME_CSS}
 ${CONTROL_CSS}
+${motifCSSOutput()}
         :host {
           display: block;
           flex: 0 0 auto;

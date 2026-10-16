@@ -49,11 +49,17 @@ test('every element in the collection declares a config schema', () => {
     const ctor = customElements.get(tag);
     assert.ok(ctor, `${tag} should be registered`);
     assert.equal(typeof ctor.configSchema, 'object', `${tag} should declare a static configSchema`);
-    assert.ok(ctor.observedAttributes.includes('state'), `${tag} should observe state`);
+    // The surface state is owned by services; leaf components do NOT observe it.
+    if (tag !== 'machvive-chat-syncopation-services') {
+      assert.ok(!ctor.observedAttributes.includes('state'), `${tag} should not own a state attribute`);
+    }
     for (const key of Object.keys(ctor.configSchema)) {
       assert.ok(ctor.observedAttributes.includes(keyToAttr(key)), `${tag} should observe ${keyToAttr(key)}`);
     }
   }
+  // Services owns the surface state attribute.
+  const servicesCtor = customElements.get('machvive-chat-syncopation-services');
+  assert.ok(servicesCtor.observedAttributes.includes('data-chat-state'), 'services observes data-chat-state');
 });
 
 test('config resolution: defaults < attributes < object overrides', async () => {
@@ -105,8 +111,12 @@ test('services config object updates the live daemon transport', async () => {
 });
 
 test('design state renders a form driven by the schema, and edits apply live', async () => {
-  const { query, remove } = mount('<machvive-chat-syncopation-prompt state="design"></machvive-chat-syncopation-prompt>');
-  await tick(20);
+  const { query, remove } = mount(`
+    <machvive-chat-syncopation-services data-chat-state="design">
+      <machvive-chat-syncopation-prompt></machvive-chat-syncopation-prompt>
+    </machvive-chat-syncopation-services>
+  `);
+  await tick(30);
   const prompt = query('machvive-chat-syncopation-prompt');
   const form = prompt.shadowRoot.querySelector('.design-form');
   assert.ok(form, 'design state should render the config form');
@@ -125,19 +135,24 @@ test('design state renders a form driven by the schema, and edits apply live', a
 });
 
 test('leaving design state removes the form', async () => {
-  const { query, remove } = mount('<machvive-chat-syncopation-prompt state="design"></machvive-chat-syncopation-prompt>');
-  await tick(20);
+  const { query, remove } = mount(`
+    <machvive-chat-syncopation-services data-chat-state="design">
+      <machvive-chat-syncopation-prompt></machvive-chat-syncopation-prompt>
+    </machvive-chat-syncopation-services>
+  `);
+  await tick(30);
+  const services = query('machvive-chat-syncopation-services');
   const prompt = query('machvive-chat-syncopation-prompt');
   assert.ok(prompt.shadowRoot.querySelector('.design-form'));
-  prompt.removeAttribute('state');
-  await tick(20);
+  services.state = 'enabled';
+  await tick(30);
   assert.equal(prompt.shadowRoot.querySelector('.design-form'), null);
   assert.ok(prompt.shadowRoot.querySelector('textarea'), 'runtime UI is intact');
   remove();
 });
 
 test('services design state exposes its own schema form', async () => {
-  const { query, remove } = mount('<machvive-chat-syncopation-services state="design"></machvive-chat-syncopation-services>');
+  const { query, remove } = mount('<machvive-chat-syncopation-services data-chat-state="design"></machvive-chat-syncopation-services>');
   await tick(20);
   const services = query('machvive-chat-syncopation-services');
   const transport = services.shadowRoot.querySelector('[data-config-key="transport"]');
