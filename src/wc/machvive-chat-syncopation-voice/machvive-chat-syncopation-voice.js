@@ -10,7 +10,7 @@
  * microphone that transmits the moment it recognises a phrase will eventually
  * send a half-sentence, or a conversation happening in the room.
  */
-import { THEME_CSS, CONTROL_CSS, motifCSSOutput } from '../machvive-chat-syncopation-services/theme.js';
+import { CONTROL_CSS, SCROLL_CSS } from '../machvive-chat-syncopation-services/theme.js';
 import { whenServices } from '../machvive-chat-syncopation-services/machvive-chat-syncopation-services.js';
 import { resolveComponentConfig, keyToAttr } from '../machvive-chat-syncopation-services/component-config.js';
 import { renderConfigForm, CONFIG_FORM_CSS } from '../machvive-chat-syncopation-services/config-form.js';
@@ -111,23 +111,22 @@ export class MachviveChatSyncopationVoice extends HTMLElement {
     const integrated = Boolean(this.#composer);
     this.shadowRoot.innerHTML = `
       <style>
-${THEME_CSS}
 ${CONTROL_CSS}
-${motifCSSOutput()}
+${SCROLL_CSS}
         :host {
           display: block;
           flex: 0 0 auto;
           padding: 0.5rem;
-          font-family: var(--mcs-font);
-          color: var(--mcs-fg);
-          background: var(--mcs-bg);
+          font-family: var(--mcs-font, system-ui, sans-serif);
+          color: var(--mcs-fg, #1a1a1a);
+          background: var(--mcs-bg, #ffffff);
         }
         .row { display: flex; align-items: center; gap: 0.5rem; }
-        .row button { padding: 0.375rem 0.75rem; cursor: pointer; background: var(--mcs-surface); }
-        .row button[aria-pressed="true"] { background: var(--mcs-accent); color: var(--mcs-accent-fg); border-color: transparent; }
-        .row button[disabled] { cursor: not-allowed; color: var(--mcs-muted); }
-        .note { margin: 0; font-size: 0.8125rem; color: var(--mcs-muted); }
-        :focus-visible { outline: 2px solid var(--mcs-accent); outline-offset: 2px; }
+        .row button { padding: 0.375rem 0.75rem; cursor: pointer; background: var(--mcs-surface, #f6f7f9); }
+        .row button[aria-pressed="true"] { background: var(--mcs-accent, #1565c0); color: var(--mcs-accent-fg, #ffffff); border-color: transparent; }
+        .row button[disabled] { cursor: not-allowed; color: var(--mcs-muted, #646464); }
+        .note { margin: 0; font-size: 0.8125rem; color: var(--mcs-muted, #646464); }
+        :focus-visible { outline: 2px solid var(--mcs-accent, #1565c0); outline-offset: 2px; }
 ${design ? CONFIG_FORM_CSS : ''}
       </style>
       <div class="row" ${integrated ? 'hidden' : ''}>

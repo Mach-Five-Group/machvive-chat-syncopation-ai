@@ -218,19 +218,25 @@ machvive-chat-syncopation {
 
 Tokens: `--mcs-fg`, `--mcs-muted`, `--mcs-bg`, `--mcs-surface`, `--mcs-user-bg`,
 `--mcs-assistant-bg`, `--mcs-border`, `--mcs-accent`, `--mcs-accent-fg`,
-`--mcs-danger`, `--mcs-radius`, `--mcs-font`, `--mcs-mono`.
+`--mcs-danger`, `--mcs-radius`, `--mcs-font`, `--mcs-mono`, plus scrollbar tokens
+`--mcs-scroll-track` / `--mcs-scroll-thumb` / `--mcs-scroll-thumb-hover`.
 
-Dark mode follows `prefers-color-scheme`; `theme="light"` / `theme="dark"` overrides
-the OS in either direction.
+Theming is scope, and it inherits: `data-mcs-theme="light|dark"` sets the scheme,
+`data-mcs-motif="corp|artdeco"` sets the motif. Either can go on `body`, a section,
+or a surface — nearest scope wins, so a page can hold a dark surface and a light
+one at once. With no scope, the OS preference applies. A page-level `--mcs-*`
+override reaches every component, because components read inherited tokens rather
+than setting their own on `:host`.
 
 **If you add a component or restyle one**, four rules carry real defects behind them:
-1. Interpolate `THEME_CSS`; never redefine a token locally.
+1. Read tokens as `var(--mcs-*, <fallback>)`; never set a public `--mcs-*` on
+   `:host` — that outranks the page's scope and silently overrides configuration.
 2. Give form controls an explicit `color` — they do not inherit it from `:host`, and
    the UA default is how buttons end up white-on-white at 1:1 contrast.
 3. A component that themes its text must paint its own background, or light text
    lands on a light page.
-4. Keep `color-scheme: light dark`, or scrollbars and select popups render light on
-   a dark panel.
+4. Keep `color-scheme: light dark` on the `:root` scope, or scrollbars and select
+   popups render light on a dark panel.
 
 ## Behaviours that are deliberate
 

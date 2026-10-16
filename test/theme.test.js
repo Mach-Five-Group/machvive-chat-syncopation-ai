@@ -22,16 +22,14 @@ test('every component is accounted for', () => {
 test('the dark media query is guarded against an explicit light choice', () => {
   const media = THEME_CSS.indexOf('@media (prefers-color-scheme: dark)');
   assert.ok(media > 0);
-  const guard = THEME_CSS.indexOf(':host(:not([theme="light"]))');
+  const guard = THEME_CSS.indexOf(':root:not([data-mcs-theme])');
   assert.ok(guard > media, 'the guard belongs inside the media block');
 });
 
-test('an explicit dark theme is declared after the media query so it wins in a light OS', () => {
-  const mediaEnd = THEME_CSS.indexOf('}\n  :host([theme="dark"])');
-  const explicitDark = THEME_CSS.indexOf(':host([theme="dark"])');
+test('an explicit dark scope is declared after the media query so it wins in a light OS', () => {
   const media = THEME_CSS.indexOf('@media (prefers-color-scheme: dark)');
+  const explicitDark = THEME_CSS.indexOf('[data-mcs-theme="dark"]');
   assert.ok(explicitDark > media, 'cascade order is load-bearing: later wins at equal specificity');
-  assert.ok(mediaEnd > 0, 'the explicit dark block should follow the closing brace of the media query');
 });
 
 test('color-scheme is declared', () => {
@@ -51,6 +49,15 @@ test('light and dark define the same token set', () => {
   assert.deepEqual(missing, [], 'every colour token needs a dark value');
 });
 
+test('the base tokens live in scope rules, not a component :host block', () => {
+  // The scope model: tokens are set on :root and [data-mcs-theme] scopes, never
+  // on a component's :host (which would outrank the page's :root on specificity).
+  assert.ok(THEME_CSS.includes(':root'), 'the base default lives on :root');
+  assert.ok(THEME_CSS.includes('[data-mcs-theme="dark"]'), 'there is a dark scope');
+  assert.ok(THEME_CSS.includes('[data-mcs-theme="light"]'), 'there is a light scope');
+  assert.ok(!THEME_CSS.includes(':host'), 'no :host block — that is the whole point');
+});
+
 test('controls set their own colour', () => {
   // Form controls do not inherit `color` from :host, so the UA supplies a
   // per-theme default — which is how every button became white-on-white.
@@ -60,8 +67,14 @@ test('controls set their own colour', () => {
 
 test('no component hardcodes a colour outside the token blocks', () => {
   for (const { dir, source } of COMPONENTS) {
-    // Strip the interpolated theme, then anything left is the component's own.
-    const own = source.replace('${THEME_CSS}', '').replace('${CONTROL_CSS}', '');
+    // Strip the interpolated control/scroll CSS, then anything left is the
+    // component's own. A var(--mcs-*, #hex) fallback is the sanctioned pattern —
+    // the token is the value, the hex is only the unscoped default. Strip those
+    // before looking for a bare hardcoded colour.
+    const own = source
+      .replace('${CONTROL_CSS}', '')
+      .replace('${SCROLL_CSS}', '')
+      .replace(/var\(--mcs-[a-z-]+\s*,\s*#[0-9a-fA-F]{3,8}\)/g, 'TOKEN');
     const literals = own.match(/#[0-9a-fA-F]{3,8}\b/g) ?? [];
     assert.deepEqual(literals, [], `${dir} hardcodes ${literals.join(', ')} instead of using a token`);
     const named = own.match(/(?:color|background)\s*:\s*(white|black|red|blue|green|grey|gray)\b/g) ?? [];
@@ -81,13 +94,12 @@ test('a component that themes its text also paints its surface', () => {
   }
 });
 
-test('every component interpolates the shared theme rather than copying tokens', () => {
+test('every component inherits tokens with a fallback rather than redefining them', () => {
   for (const { dir, source } of COMPONENTS) {
-    assert.ok(source.includes('${THEME_CSS}'), `${dir} should interpolate THEME_CSS`);
-    assert.ok(
-      !/--mcs-[a-z-]+\s*:/.test(source.replace('${THEME_CSS}', '')),
-      `${dir} redefines a token; theme.js holds the only copy`
-    );
+    // The scope model: a component reads var(--mcs-*) with a fallback and never
+    // *sets* a public token on :host. Setting one would override the page's :root.
+    const hostSets = source.match(/:host[^{]*\{[^}]*--mcs-[a-z-]+\s*:/s);
+    assert.ok(!hostSets, `${dir} sets a public --mcs-* token on :host — that overrides the page scope`);
   }
 });
 

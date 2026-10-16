@@ -9,7 +9,7 @@
  * someone back down while they are reading earlier context is the single most
  * common way a chat surface becomes unusable.
  */
-import { THEME_CSS, motifCSSOutput } from '../machvive-chat-syncopation-services/theme.js';
+import { CONTROL_CSS, SCROLL_CSS } from '../machvive-chat-syncopation-services/theme.js';
 import { whenServices } from '../machvive-chat-syncopation-services/machvive-chat-syncopation-services.js';
 import { resolveComponentConfig, keyToAttr } from '../machvive-chat-syncopation-services/component-config.js';
 import { renderConfigForm, CONFIG_FORM_CSS } from '../machvive-chat-syncopation-services/config-form.js';
@@ -87,17 +87,17 @@ export class MachviveChatSyncopationCanvas extends HTMLElement {
     const design = this.#services?.state === 'design';
     this.shadowRoot.innerHTML = `
       <style>
-${THEME_CSS}
-${motifCSSOutput()}
+${CONTROL_CSS}
+${SCROLL_CSS}
         :host {
           display: block;
           flex: 1 1 auto;
           min-height: 0;
           overflow-y: auto;
           padding: 0.75rem;
-          font-family: var(--mcs-font);
-          color: var(--mcs-fg);
-          background: var(--mcs-bg);
+          font-family: var(--mcs-font, system-ui, sans-serif);
+          color: var(--mcs-fg, #1a1a1a);
+          background: var(--mcs-bg, #ffffff);
           /* Deliberately NOT scroll-behavior: smooth. Autoscroll here fires on
              every streamed chunk, and an animated scroll means the view
              perpetually lags the newest text — while scrollTop reads taken
@@ -111,33 +111,33 @@ ${motifCSSOutput()}
         .bubble {
           max-width: min(42rem, 85%);
           padding: 0.5rem 0.75rem;
-          border-radius: var(--mcs-radius);
-          background: var(--mcs-assistant-bg);
+          border-radius: var(--mcs-radius, 12px);
+          background: var(--mcs-assistant-bg, #f3f4f6);
           /* Model output contains newlines and runs of spaces that carry
              meaning; collapsing them turns a list into a paragraph. */
           white-space: pre-wrap;
           overflow-wrap: anywhere;
           line-height: 1.45;
         }
-        li[data-role="user"] .bubble { background: var(--mcs-user-bg); }
+        li[data-role="user"] .bubble { background: var(--mcs-user-bg, #e8f0fe); }
         li[data-role="system"] .bubble,
         li[data-role="tool"] .bubble {
-          background: var(--mcs-surface);
-          color: var(--mcs-muted);
-          font-family: var(--mcs-mono);
+          background: var(--mcs-surface, #f6f7f9);
+          color: var(--mcs-muted, #646464);
+          font-family: var(--mcs-mono, ui-monospace, monospace);
           font-size: 0.875rem;
         }
-        li[data-status="error"] .bubble { color: var(--mcs-danger); border: 1px solid var(--mcs-danger); }
+        li[data-status="error"] .bubble { color: var(--mcs-danger, #a4161a); border: 1px solid var(--mcs-danger, #a4161a); }
         li[data-status="pending"] .bubble::after {
           content: '▋';
-          color: var(--mcs-muted);
+          color: var(--mcs-muted, #646464);
           animation: blink 1s steps(2, start) infinite;
         }
         @keyframes blink { to { visibility: hidden; } }
         @media (prefers-reduced-motion: reduce) {
           li[data-status="pending"] .bubble::after { animation: none; }
         }
-        .empty { color: var(--mcs-muted); font-size: 0.9375rem; padding: 0.5rem; }
+        .empty { color: var(--mcs-muted, #646464); font-size: 0.9375rem; padding: 0.5rem; }
 ${design ? CONFIG_FORM_CSS : ''}
       </style>
       <ol role="log" aria-live="polite" aria-relevant="additions text"></ol>

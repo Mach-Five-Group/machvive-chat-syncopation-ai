@@ -11,7 +11,7 @@
  * The animated wait-state border lives on the *container*, not here — this row's
  * job is the message channel, not the activity channel.
  */
-import { THEME_CSS, CONTROL_CSS, motifCSSOutput } from '../machvive-chat-syncopation-services/theme.js';
+import { CONTROL_CSS, SCROLL_CSS } from '../machvive-chat-syncopation-services/theme.js';
 import { whenServices } from '../machvive-chat-syncopation-services/machvive-chat-syncopation-services.js';
 import { resolveComponentConfig, keyToAttr } from '../machvive-chat-syncopation-services/component-config.js';
 import { renderConfigForm, CONFIG_FORM_CSS } from '../machvive-chat-syncopation-services/config-form.js';
@@ -39,6 +39,7 @@ export class MachviveChatSyncopationPrompt extends HTMLElement {
   #actions = new Map();
   /** The message the bus derived — shown only when no explicit status is set. */
   #derivedStatus = '';
+  #derivedSeverity = 'info';
 
   constructor() {
     super();
@@ -87,12 +88,12 @@ export class MachviveChatSyncopationPrompt extends HTMLElement {
       this.#services.bus.on('state:changed', () => this.#render()),
       // The status channel: a failed turn or a state transition is the kind of
       // thing the surface should say, not the kind of thing it should hide.
-      this.#services.bus.on('daemon:error', (e) => this.#derive(`Something went wrong — ${e.error}`)),
+      this.#services.bus.on('daemon:error', (e) => this.#derive(`Something went wrong — ${e.error}`, 'error')),
       this.#services.bus.on('daemon:busy', () => this.#derive('')),
       this.#services.bus.on('daemon:idle', () => this.#derive('')),
       this.#services.bus.on('state:changed', ({ to }) => {
-        if (to === 'disabled') this.#derive('This surface is read-only');
-        else if (to === 'loading') this.#derive('Loading…');
+        if (to === 'disabled') this.#derive('This surface is read-only', 'info');
+        else if (to === 'loading') this.#derive('Loading…', 'info');
         else this.#derive(''); // enabled / design: nothing to announce
       })
     ];
@@ -109,39 +110,45 @@ export class MachviveChatSyncopationPrompt extends HTMLElement {
     const statusText = status || this.#derivedStatus;
     this.shadowRoot.innerHTML = `
       <style>
-${THEME_CSS}
 ${CONTROL_CSS}
+${SCROLL_CSS}
 ${ICON_CSS}
-${motifCSSOutput()}
         :host {
           display: block;
           flex: 0 0 auto;
-          font-family: var(--mcs-font);
-          color: var(--mcs-fg);
-          background: var(--mcs-bg);
-          border-top: 1px solid var(--mcs-border);
+          font-family: var(--mcs-font, system-ui, sans-serif);
+          color: var(--mcs-fg, #1a1a1a);
+          background: var(--mcs-bg, #ffffff);
+          border-top: 1px solid var(--mcs-border, #e2e4e8);
         }
         form.composer {
           display: grid;
           grid-template-areas: "status" "input" "actions";
           grid-template-rows: auto auto auto;
         }
-        .row + .row { border-top: 1px solid var(--mcs-border); }
+        .row + .row { border-top: 1px solid var(--mcs-border, #e2e4e8); }
 
-        /* Row 1 — the status line. Single line, left-justified, ellipsised, and
-           gone entirely when there is nothing to say so it costs no height. */
+        /* Row 1 — the status line. A single left-justified line with an icon and
+           real presence (it occupies height only when it has something to say);
+           its colour reflects severity from the theme tokens. */
         .status {
           grid-area: status;
-          padding: 0 0.75rem;
-          min-height: 0;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.375rem 0.75rem;
+          min-height: 1.75rem;
           font-size: 0.8125rem;
-          color: var(--mcs-muted);
+          color: var(--mcs-muted, #646464);
           white-space: nowrap;
           overflow: hidden;
-          text-overflow: ellipsis;
           text-align: left;
         }
         .status[hidden] { display: none; }
+        .status .status-text { overflow: hidden; text-overflow: ellipsis; }
+        .status .mcs-icon { width: 1rem; height: 1rem; flex: 0 0 auto; }
+        .status[data-severity="error"] { color: var(--mcs-danger, #a4161a); }
+        .status[data-severity="info"] { color: var(--mcs-muted, #646464); }
 
         /* Row 2 — the input. The textarea grows with content. */
         .input { grid-area: input; display: flex; padding: 0.5rem 0.75rem; }
@@ -151,7 +158,7 @@ ${motifCSSOutput()}
           max-height: 8rem;
           padding: 0.5rem;
           resize: none;
-          background: var(--mcs-surface);
+          background: var(--mcs-surface, #f6f7f9);
         }
 
         /* Row 3 — the action row. Registered actions on the left, send on the right. */
@@ -173,31 +180,36 @@ ${motifCSSOutput()}
           cursor: pointer;
           background: transparent;
           border-color: transparent;
-          color: var(--mcs-muted);
+          color: var(--mcs-muted, #646464);
         }
-        .actions button.action:hover { color: var(--mcs-fg); }
+        .actions button.action:hover { color: var(--mcs-fg, #1a1a1a); }
         .actions button.action .mcs-icon { width: 1.25rem; height: 1.25rem; }
+        /* Send is icon-only — the glyph carries it, and the accessible name stays. */
         button.send {
           display: inline-flex;
           align-items: center;
-          gap: 0.375rem;
-          padding: 0.5rem 1rem;
+          justify-content: center;
+          padding: 0.5rem;
+          min-width: 2.25rem;
           min-height: 2.25rem;
           cursor: pointer;
-          background: var(--mcs-accent);
-          color: var(--mcs-accent-fg);
+          background: var(--mcs-accent, #1565c0);
+          color: var(--mcs-accent-fg, #ffffff);
           border-color: transparent;
+          border-radius: var(--mcs-radius, 12px);
         }
         button.send .mcs-icon { width: 1.125rem; height: 1.125rem; }
-        button.send[data-mode="stop"] { background: var(--mcs-surface); color: var(--mcs-fg); border-color: var(--mcs-border); }
-        button.send[data-mode="stop"] .mcs-icon { display: none; }
+        button.send[data-mode="stop"] { background: var(--mcs-surface, #f6f7f9); color: var(--mcs-fg, #1a1a1a); border-color: var(--mcs-border, #e2e4e8); }
+        button.send[data-mode="stop"] .mcs-icon-send { display: none; }
+        button.send[data-mode="stop"] .mcs-icon-stop-circle { display: inline-block; }
+        button.send[data-mode="send"] .mcs-icon-stop-circle { display: none; }
 
-        :focus-visible { outline: 2px solid var(--mcs-accent); outline-offset: 2px; }
+        :focus-visible { outline: 2px solid var(--mcs-accent, #1565c0); outline-offset: 2px; }
         .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
         form.composer[data-state="disabled"] .input,
         form.composer[data-state="disabled"] .actions { pointer-events: none; opacity: 0.6; }
-        .loading-bar { height: 2px; background: var(--mcs-surface); overflow: hidden; }
-        .loading-bar::after { content: ''; display: block; height: 100%; width: 40%; background: var(--mcs-accent);
+        .loading-bar { height: 2px; background: var(--mcs-surface, #f6f7f9); overflow: hidden; }
+        .loading-bar::after { content: ''; display: block; height: 100%; width: 40%; background: var(--mcs-accent, #1565c0);
           animation: mcs-loading 1.1s ease-in-out infinite; }
         @keyframes mcs-loading { 0% { transform: translateX(-100%); } 100% { transform: translateX(250%); } }
         @media (prefers-reduced-motion: reduce) { .loading-bar::after { animation: none; width: 100%; } }
@@ -205,7 +217,7 @@ ${design ? CONFIG_FORM_CSS : ''}
       </style>
       <form class="composer" data-state="${state}">
         ${loading ? '<div class="loading-bar" role="progressbar" aria-label="Loading"></div>' : ''}
-        <p class="status row" role="status" aria-live="polite" ${statusText ? '' : 'hidden'}></p>
+        <p class="status row" role="status" aria-live="polite" data-severity="info" ${statusText ? '' : 'hidden'}><span class="mcs-icon mcs-icon-notifications" aria-hidden="true"></span><span class="status-text"></span></p>
         <div class="input row">
           <label class="sr" for="field"></label>
           <textarea id="field" rows="1" ${disabled ? 'disabled' : ''}></textarea>
@@ -213,7 +225,7 @@ ${design ? CONFIG_FORM_CSS : ''}
         <div class="actions row" role="toolbar" aria-label="Composer actions">
           <span class="action-cluster"></span>
           <span class="spacer"></span>
-          <button type="submit" class="send" data-mode="send" ${disabled ? 'disabled' : ''}><span class="mcs-icon mcs-icon-send" aria-hidden="true"></span><span class="btn-label">Send</span></button>
+          <button type="submit" class="send" data-mode="send" aria-label="Send" ${disabled ? 'disabled' : ''}><span class="mcs-icon mcs-icon-send" aria-hidden="true"></span><span class="mcs-icon mcs-icon-stop-circle" aria-hidden="true"></span><span class="btn-label sr">Send</span></button>
         </div>
       </form>
     `;
@@ -225,7 +237,7 @@ ${design ? CONFIG_FORM_CSS : ''}
     this.#field = field;
     this.#button = this.shadowRoot.querySelector('button.send');
     this.#statusEl = this.shadowRoot.querySelector('.status');
-    if (statusText) this.#statusEl.textContent = statusText;
+    if (statusText) this.#applyStatus();
     this.shadowRoot.querySelector('form.composer').addEventListener('submit', this.#submit);
     this.#field.addEventListener('keydown', this.#keydown);
     this.#field.addEventListener('input', this.#autosize);
@@ -234,15 +246,17 @@ ${design ? CONFIG_FORM_CSS : ''}
   }
 
   /** The bus-derived status. An explicit `status` config always wins. */
-  #derive(text) {
+  #derive(text, severity = 'info') {
     this.#derivedStatus = text;
+    this.#derivedSeverity = severity;
     this.#applyStatus();
   }
 
   #applyStatus() {
     if (!this.#statusEl) return;
     const text = this.config.status || this.#derivedStatus;
-    this.#statusEl.textContent = text;
+    this.#statusEl.querySelector('.status-text').textContent = text;
+    this.#statusEl.dataset.severity = this.#derivedSeverity;
     this.#statusEl.hidden = !text;
   }
 
@@ -323,7 +337,8 @@ ${design ? CONFIG_FORM_CSS : ''}
   #setMode(mode) {
     if (!this.#button) return;
     this.#button.dataset.mode = mode;
-    // Update the label only — textContent on the button would wipe the icon span.
+    // The button is icon-only; keep the accessible name accurate.
+    this.#button.setAttribute('aria-label', mode === 'stop' ? 'Stop' : 'Send');
     const label = this.#button.querySelector('.btn-label');
     if (label) label.textContent = mode === 'stop' ? 'Stop' : 'Send';
   }

@@ -279,15 +279,41 @@ machvive-chat-syncopation {
 }
 ```
 
-Dark mode follows `prefers-color-scheme` by default; `theme="light"` or
-`theme="dark"` overrides the OS, and an explicit choice wins in either direction.
+## Theme is scope
+
+Theming inherits down the page, so a surface picks up whatever its nearest scoped
+ancestor declares — and two scopes can coexist on one page. Two orthogonal
+attributes, each settable on `body`, a section, or a surface:
+
+```html
+<body data-mcs-theme="light">           <!-- scheme: light or dark -->
+  <section data-mcs-theme="dark">       <!-- this subtree is dark -->
+    <machvive-chat-syncopation></…>     <!-- inherits dark -->
+    <machvive-chat-syncopation data-mcs-theme="light"></…>  <!-- this one overrides to light -->
+  </section>
+</body>
+```
+
+With no scope attribute anywhere, the OS preference applies.
 
 ### Motifs
 
 A motif is a named bundle of the same tokens — a personality that composes with the
-scheme. Built-ins are `corp` and `artdeco`; select one with `theme="artdeco"` (light
-or dark follows the OS), and register your own with `services.registerTheme(name,
-{ light, dark })`.
+scheme. Built-ins are `corp` and `artdeco`. Motif is its own attribute, set
+independently of the scheme:
+
+```html
+<machvive-chat-syncopation data-mcs-motif="artdeco" data-mcs-theme="dark"></…>
+```
+
+Register your own like a transport — `services.registerTheme(name, { light, dark })`.
+
+### Migrating from ≤ 0.4.x
+
+The `theme` attribute is retired. `theme="dark"` becomes `data-mcs-theme="dark"`,
+and selecting a motif moves from `theme="artdeco"` to `data-mcs-motif="artdeco"`.
+Components no longer set tokens on their own `:host` — they read the inherited
+scope, which is what lets a page-level `--mcs-*` override reach them.
 
 ## Browser support
 

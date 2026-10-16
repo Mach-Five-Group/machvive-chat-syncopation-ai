@@ -11,7 +11,7 @@
  * should produce a working chat; explicit services are for pages that need to
  * reach the bus or share one conversation across two surfaces.
  */
-import { THEME_CSS, motifCSSOutput } from '../machvive-chat-syncopation-services/theme.js';
+import { CONTROL_CSS, SCROLL_CSS, hoistTheme } from '../machvive-chat-syncopation-services/theme.js';
 import { findServices, SERVICES_TAG } from '../machvive-chat-syncopation-services/machvive-chat-syncopation-services.js';
 import { resolveComponentConfig, keyToAttr } from '../machvive-chat-syncopation-services/component-config.js';
 import { renderConfigForm, CONFIG_FORM_CSS } from '../machvive-chat-syncopation-services/config-form.js';
@@ -87,6 +87,7 @@ export class MachviveChatSyncopation extends HTMLElement {
 
   connectedCallback() {
     hoistIcons();
+    hoistTheme();
     this.#services = findServices(this) ?? this.#createServices();
     if (this.#services?.bus) {
       this.#off = [
@@ -115,8 +116,8 @@ export class MachviveChatSyncopation extends HTMLElement {
     const design = this.#services?.state === 'design';
     this.shadowRoot.innerHTML = `
       <style>
-${THEME_CSS}
-${motifCSSOutput()}
+${CONTROL_CSS}
+${SCROLL_CSS}
         :host {
           display: flex;
           flex-direction: column;
@@ -126,11 +127,11 @@ ${motifCSSOutput()}
              page and the prompt walks off the bottom of the viewport. */
           height: var(--mcs-height, 32rem);
           max-height: 100%;
-          font-family: var(--mcs-font);
-          color: var(--mcs-fg);
-          background: var(--mcs-bg);
-          border: 1px solid var(--mcs-border);
-          border-radius: var(--mcs-radius);
+          font-family: var(--mcs-font, system-ui, sans-serif);
+          color: var(--mcs-fg, #1a1a1a);
+          background: var(--mcs-bg, #ffffff);
+          border: 1px solid var(--mcs-border, #e2e4e8);
+          border-radius: var(--mcs-radius, 12px);
           overflow: hidden;
         }
         header, footer { flex: 0 0 auto; }
@@ -146,13 +147,13 @@ ${motifCSSOutput()}
           content: '';
           position: absolute;
           inset: 0;
-          border-radius: var(--mcs-radius);
+          border-radius: var(--mcs-radius, 12px);
           padding: 2px;
           background: linear-gradient(60deg,
-            var(--mcs-accent),
-            var(--mcs-muted),
-            var(--mcs-danger),
-            var(--mcs-accent));
+            var(--mcs-accent, #1565c0),
+            var(--mcs-muted, #646464),
+            var(--mcs-danger, #a4161a),
+            var(--mcs-accent, #1565c0));
           background-size: 300% 300%;
           /* Mask to a ring: the padding box shows the gradient, the content
              box is cut out, so only the 2px border band is visible. The mask

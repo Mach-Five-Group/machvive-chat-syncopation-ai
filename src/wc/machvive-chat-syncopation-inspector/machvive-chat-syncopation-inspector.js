@@ -9,7 +9,7 @@
  * Capped and opt-in. It holds the last N events in memory and is a development
  * tool, not telemetry: nothing leaves the page, and importing it emits nothing.
  */
-import { THEME_CSS, CONTROL_CSS, motifCSSOutput } from '../machvive-chat-syncopation-services/theme.js';
+import { CONTROL_CSS, SCROLL_CSS } from '../machvive-chat-syncopation-services/theme.js';
 import { whenServices } from '../machvive-chat-syncopation-services/machvive-chat-syncopation-services.js';
 import { resolveComponentConfig, keyToAttr } from '../machvive-chat-syncopation-services/component-config.js';
 import { renderConfigForm, CONFIG_FORM_CSS } from '../machvive-chat-syncopation-services/config-form.js';
@@ -74,19 +74,18 @@ export class MachviveChatSyncopationInspector extends HTMLElement {
     const design = this.#services?.state === 'design';
     this.shadowRoot.innerHTML = `
       <style>
-${THEME_CSS}
 ${CONTROL_CSS}
-${motifCSSOutput()}
+${SCROLL_CSS}
         :host {
           display: block;
-          font-family: var(--mcs-mono);
+          font-family: var(--mcs-mono, ui-monospace, monospace);
           font-size: 0.8125rem;
-          color: var(--mcs-fg);
+          color: var(--mcs-fg, #1a1a1a);
           /* Paints its own surface: a component that themes its text and
              inherits the page's background renders light-on-light. */
-          background: var(--mcs-bg);
-          border: 1px solid var(--mcs-border);
-          border-radius: var(--mcs-radius);
+          background: var(--mcs-bg, #ffffff);
+          border: 1px solid var(--mcs-border, #e2e4e8);
+          border-radius: var(--mcs-radius, 12px);
           overflow: hidden;
         }
         header {
@@ -94,20 +93,20 @@ ${motifCSSOutput()}
           align-items: center;
           gap: 0.5rem;
           padding: 0.375rem 0.5rem;
-          background: var(--mcs-surface);
-          border-bottom: 1px solid var(--mcs-border);
+          background: var(--mcs-surface, #f6f7f9);
+          border-bottom: 1px solid var(--mcs-border, #e2e4e8);
         }
         h2 { margin: 0; font-size: 0.8125rem; font-weight: 600; flex: 1 1 auto; }
         header button { padding: 0.25rem 0.5rem; cursor: pointer; font-size: 0.75rem; }
-        header button[aria-pressed="true"] { background: var(--mcs-accent); color: var(--mcs-accent-fg); border-color: transparent; }
+        header button[aria-pressed="true"] { background: var(--mcs-accent, #1565c0); color: var(--mcs-accent-fg, #ffffff); border-color: transparent; }
         .log { margin: 0; padding: 0; list-style: none; max-height: var(--mcs-inspector-height, 14rem); overflow-y: auto; }
-        .log li { display: flex; gap: 0.5rem; padding: 0.1875rem 0.5rem; border-bottom: 1px solid var(--mcs-border); }
+        .log li { display: flex; gap: 0.5rem; padding: 0.1875rem 0.5rem; border-bottom: 1px solid var(--mcs-border, #e2e4e8); }
         .log li:last-child { border-bottom: 0; }
-        time { color: var(--mcs-muted); flex: 0 0 5.5rem; }
-        .topic { flex: 0 0 11rem; color: var(--mcs-accent); overflow-wrap: anywhere; }
-        .detail { flex: 1 1 auto; color: var(--mcs-muted); overflow-wrap: anywhere; }
-        .empty { padding: 0.5rem; margin: 0; color: var(--mcs-muted); }
-        :focus-visible { outline: 2px solid var(--mcs-accent); outline-offset: 2px; }
+        time { color: var(--mcs-muted, #646464); flex: 0 0 5.5rem; }
+        .topic { flex: 0 0 11rem; color: var(--mcs-accent, #1565c0); overflow-wrap: anywhere; }
+        .detail { flex: 1 1 auto; color: var(--mcs-muted, #646464); overflow-wrap: anywhere; }
+        .empty { padding: 0.5rem; margin: 0; color: var(--mcs-muted, #646464); }
+        :focus-visible { outline: 2px solid var(--mcs-accent, #1565c0); outline-offset: 2px; }
 ${design ? CONFIG_FORM_CSS : ''}
       </style>
       <header>

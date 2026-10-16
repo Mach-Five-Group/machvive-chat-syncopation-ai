@@ -10,7 +10,7 @@
  *  - The idle nudge fires once per conversation, never on a loop. A surface that
  *    keeps asking whether you are still there is a surface people close.
  */
-import { THEME_CSS, CONTROL_CSS, motifCSSOutput } from '../machvive-chat-syncopation-services/theme.js';
+import { CONTROL_CSS, SCROLL_CSS } from '../machvive-chat-syncopation-services/theme.js';
 import { whenServices } from '../machvive-chat-syncopation-services/machvive-chat-syncopation-services.js';
 import { resolveComponentConfig, keyToAttr } from '../machvive-chat-syncopation-services/component-config.js';
 import { renderConfigForm, CONFIG_FORM_CSS } from '../machvive-chat-syncopation-services/config-form.js';
@@ -89,16 +89,15 @@ export class MachviveChatSyncopationNudge extends HTMLElement {
     const design = this.#services?.state === 'design';
     this.shadowRoot.innerHTML = `
       <style>
-${THEME_CSS}
 ${CONTROL_CSS}
-${motifCSSOutput()}
+${SCROLL_CSS}
         :host {
           display: block;
           flex: 0 0 auto;
           padding: 0.5rem;
-          font-family: var(--mcs-font);
-          color: var(--mcs-fg);
-          background: var(--mcs-bg);
+          font-family: var(--mcs-font, system-ui, sans-serif);
+          color: var(--mcs-fg, #1a1a1a);
+          background: var(--mcs-bg, #ffffff);
         }
         :host([hidden]) { display: none; }
         .chips { display: flex; flex-wrap: wrap; gap: 0.375rem; }
@@ -106,16 +105,16 @@ ${motifCSSOutput()}
           padding: 0.375rem 0.75rem;
           font-size: 0.875rem;
           cursor: pointer;
-          background: var(--mcs-surface);
+          background: var(--mcs-surface, #f6f7f9);
           border-radius: 999px;
           text-align: left;
         }
-        .chips button:hover { border-color: var(--mcs-accent); }
-        :focus-visible { outline: 2px solid var(--mcs-accent); outline-offset: 2px; }
+        .chips button:hover { border-color: var(--mcs-accent, #1565c0); }
+        :focus-visible { outline: 2px solid var(--mcs-accent, #1565c0); outline-offset: 2px; }
         .idle {
           margin: 0.5rem 0 0;
           font-size: 0.875rem;
-          color: var(--mcs-muted);
+          color: var(--mcs-muted, #646464);
         }
         .idle[hidden] { display: none; }
 ${design ? CONFIG_FORM_CSS : ''}

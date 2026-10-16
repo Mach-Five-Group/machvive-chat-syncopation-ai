@@ -10,7 +10,7 @@
  * and the memory copy — a "clear history" that only hides rows is a lie, and
  * the one place in this collection where that would actually matter.
  */
-import { THEME_CSS, CONTROL_CSS, motifCSSOutput } from '../machvive-chat-syncopation-services/theme.js';
+import { CONTROL_CSS, SCROLL_CSS } from '../machvive-chat-syncopation-services/theme.js';
 import { whenServices } from '../machvive-chat-syncopation-services/machvive-chat-syncopation-services.js';
 import { resolveComponentConfig, keyToAttr } from '../machvive-chat-syncopation-services/component-config.js';
 import { renderConfigForm, CONFIG_FORM_CSS } from '../machvive-chat-syncopation-services/config-form.js';
@@ -74,17 +74,16 @@ export class MachviveChatSyncopationHistory extends HTMLElement {
     const design = this.#services?.state === 'design';
     this.shadowRoot.innerHTML = `
       <style>
-${THEME_CSS}
 ${CONTROL_CSS}
-${motifCSSOutput()}
+${SCROLL_CSS}
         :host {
           display: block;
-          font-family: var(--mcs-font);
+          font-family: var(--mcs-font, system-ui, sans-serif);
           font-size: 0.875rem;
-          color: var(--mcs-fg);
-          background: var(--mcs-bg);
-          border: 1px solid var(--mcs-border);
-          border-radius: var(--mcs-radius);
+          color: var(--mcs-fg, #1a1a1a);
+          background: var(--mcs-bg, #ffffff);
+          border: 1px solid var(--mcs-border, #e2e4e8);
+          border-radius: var(--mcs-radius, 12px);
           overflow: hidden;
         }
         header {
@@ -92,20 +91,20 @@ ${motifCSSOutput()}
           align-items: center;
           gap: 0.5rem;
           padding: 0.375rem 0.5rem;
-          background: var(--mcs-surface);
-          border-bottom: 1px solid var(--mcs-border);
+          background: var(--mcs-surface, #f6f7f9);
+          border-bottom: 1px solid var(--mcs-border, #e2e4e8);
         }
         h2 { margin: 0; font-size: 0.875rem; font-weight: 600; flex: 1 1 auto; }
         header button { padding: 0.25rem 0.5rem; cursor: pointer; font-size: 0.75rem; }
-        header button.danger { color: var(--mcs-danger); }
+        header button.danger { color: var(--mcs-danger, #a4161a); }
         ul { margin: 0; padding: 0; list-style: none; max-height: var(--mcs-history-height, 14rem); overflow-y: auto; }
-        li { display: flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.5rem; border-bottom: 1px solid var(--mcs-border); }
+        li { display: flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.5rem; border-bottom: 1px solid var(--mcs-border, #e2e4e8); }
         li:last-child { border-bottom: 0; }
         .label { flex: 1 1 auto; min-width: 0; }
         .title { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .count { color: var(--mcs-muted); font-size: 0.75rem; }
-        .note { margin: 0; padding: 0.5rem; color: var(--mcs-muted); }
-        :focus-visible { outline: 2px solid var(--mcs-accent); outline-offset: 2px; }
+        .count { color: var(--mcs-muted, #646464); font-size: 0.75rem; }
+        .note { margin: 0; padding: 0.5rem; color: var(--mcs-muted, #646464); }
+        :focus-visible { outline: 2px solid var(--mcs-accent, #1565c0); outline-offset: 2px; }
 ${design ? CONFIG_FORM_CSS : ''}
       </style>
       <header>

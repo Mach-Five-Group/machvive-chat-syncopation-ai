@@ -21,7 +21,10 @@ export declare const MOTIFS: Record<string, MotifBundle>;
 export declare const MOTIF_NAMES: string[];
 
 /**
- * Builds the CSS that applies a motif over the base theme. Mirrors the base
- * cascade: motif light, then dark under the media query, then explicit dark wins.
+ * Builds the scope CSS for a motif — `data-mcs-motif="<name>"` scope rules whose
+ * light/dark set follows the active `data-mcs-theme` scheme or the OS.
  */
-export declare function motifCSS(name: string, bundle: MotifBundle): string;
+export declare function buildMotifScopeCSS(name: string, bundle: MotifBundle): string;
+
+/** @deprecated Use buildMotifScopeCSS. */
+export declare const motifCSS: typeof buildMotifScopeCSS;

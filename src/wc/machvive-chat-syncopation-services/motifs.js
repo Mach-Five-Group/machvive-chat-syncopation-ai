@@ -1,20 +1,19 @@
 /**
- * Motifs — named token bundles, applied over the light/dark themes.
+ * Motifs — named token bundles, applied as scope.
  *
- * A theme (light | dark) answers "is this surface bright or dark". A motif
- * (corp, artdeco, cyberpunk…) answers "what is its personality". They compose:
- * a motif declares both its light and its dark token set, and the active theme
- * picks which one is in force.
+ * A theme (`data-mcs-theme`) answers "bright or dark". A motif
+ * (`data-mcs-motif`) answers "what personality". They are orthogonal attributes
+ * that compose: a motif declares both its light and its dark token set, and the
+ * active *scheme* scope picks which one is in force.
  *
  * Motifs are registered like transports — `services.registerTheme(name, bundle)` —
  * so an integrator ships their own without forking, and the built-ins are data,
  * not privileged code. Every token a motif sets is one of the `--mcs-*` tokens the
- * theme already defines; a motif that invents a token is a bug the test catches.
+ * theme defines; a motif that invents a token is a bug the test catches.
  *
- * Selection rides the `theme` attribute: `theme="dark"` forces dark,
- * `theme="artdeco"` selects the artdeco motif (its light or dark set follows the
- * same prefers-color-scheme / explicit-choice cascade as the base themes).
- * `theme="artdeco-dark"` forces the motif's dark set.
+ * Selection: `data-mcs-motif="artdeco"` on any element scopes that subtree. The
+ * light or dark set is chosen by the nearest `data-mcs-theme` scope, falling back
+ * to the OS. Set both on the same element to force a combination.
  */
 
 /**
@@ -23,7 +22,8 @@
  */
 export const MOTIF_TOKENS = Object.freeze([
   'fg', 'muted', 'bg', 'surface', 'user-bg', 'assistant-bg',
-  'border', 'accent', 'accent-fg', 'danger', 'radius', 'font', 'mono'
+  'border', 'accent', 'accent-fg', 'danger', 'radius', 'font', 'mono',
+  'scroll-track', 'scroll-thumb', 'scroll-thumb-hover'
 ]);
 
 /**
@@ -38,14 +38,16 @@ export const MOTIFS = {
       'user-bg': '#dbe6f2', 'assistant-bg': '#eceff3', border: '#c3cbd4',
       accent: '#1f4e79', 'accent-fg': '#ffffff', danger: '#a3233a',
       radius: '4px', font: 'system-ui, -apple-system, sans-serif',
-      mono: 'ui-monospace, SFMono-Regular, Menlo, monospace'
+      mono: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+      'scroll-track': '#e7ebef', 'scroll-thumb': '#b6bfc9', 'scroll-thumb-hover': '#8d97a3'
     },
     dark: {
       fg: '#dde3ea', muted: '#98a2ae', bg: '#171c23', surface: '#20272f',
       'user-bg': '#1d3a55', 'assistant-bg': '#242c36', border: '#39424e',
       accent: '#6aa3d8', 'accent-fg': '#10151b', danger: '#e98a97',
       radius: '4px', font: 'system-ui, -apple-system, sans-serif',
-      mono: 'ui-monospace, SFMono-Regular, Menlo, monospace'
+      mono: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+      'scroll-track': '#20272f', 'scroll-thumb': '#3d4753', 'scroll-thumb-hover': '#566270'
     }
   },
 
@@ -55,14 +57,16 @@ export const MOTIFS = {
       'user-bg': '#e9dcc0', 'assistant-bg': '#f0e8d6', border: '#cbb98a',
       accent: '#9c7c1e', 'accent-fg': '#241d13', danger: '#8f2f1f',
       radius: '2px', font: 'Georgia, "Times New Roman", serif',
-      mono: 'ui-monospace, SFMono-Regular, Menlo, monospace'
+      mono: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+      'scroll-track': '#efe6d2', 'scroll-thumb': '#c9b683', 'scroll-thumb-hover': '#a8925a'
     },
     dark: {
       fg: '#eadfc6', muted: '#b3a482', bg: '#17130c', surface: '#221c12',
       'user-bg': '#3a2f18', 'assistant-bg': '#262014', border: '#5a4a26',
       accent: '#d4af37', 'accent-fg': '#17130c', danger: '#e0705a',
       radius: '2px', font: 'Georgia, "Times New Roman", serif',
-      mono: 'ui-monospace, SFMono-Regular, Menlo, monospace'
+      mono: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+      'scroll-track': '#221c12', 'scroll-thumb': '#5a4a26', 'scroll-thumb-hover': '#7a653a'
     }
   }
 };
@@ -71,29 +75,30 @@ export const MOTIFS = {
 export const MOTIF_NAMES = Object.keys(MOTIFS);
 
 /**
- * Builds the CSS that applies a motif over the base theme. Mirrors the base
- * cascade: the motif's light set guards against an explicit dark choice, the
- * dark set sits in the media query guarded against explicit light, and explicit
- * `theme="<motif>-dark"` wins in a light OS.
+ * Builds the scope CSS for a motif. A motif scope sets both token sets behind the
+ * scheme: the light set applies under `data-mcs-theme="light"` (or OS light with no
+ * scheme scope), the dark set under `data-mcs-theme="dark"` or OS dark. Because the
+ * scheme is itself an inheriting scope, the composition is just cascade order.
  */
-export function motifCSS(name, bundle) {
+export function buildMotifScopeCSS(name, bundle) {
   const light = toVars(bundle.light);
   const dark = toVars(bundle.dark);
   return `
-  :host([theme="${name}"]) {
+  /* ${name}: light set under an explicit or OS-light scheme */
+  [data-mcs-motif="${name}"] {
 ${light}  }
+  [data-mcs-motif="${name}"][data-mcs-theme="dark"],
+  [data-mcs-theme="dark"] [data-mcs-motif="${name}"] {
+${dark}  }
   @media (prefers-color-scheme: dark) {
-    :host([theme="${name}"]:not([data-scheme="light"])) {
+    [data-mcs-motif="${name}"]:not([data-mcs-theme="light"]):not([data-mcs-theme="dark"]) {
 ${dark}    }
   }
-  :host([theme="${name}"][data-scheme="dark"]),
-  :host([theme="${name}-dark"]) {
-${dark}  }
-  :host([theme="${name}-light"]) {
-    color-scheme: light;
-${light}  }
 `;
 }
+
+/** @deprecated — the scope-model name is buildMotifScopeCSS. */
+export const motifCSS = buildMotifScopeCSS;
 
 function toVars(tokens) {
   return Object.entries(tokens)

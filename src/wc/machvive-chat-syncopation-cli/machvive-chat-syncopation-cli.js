@@ -10,7 +10,7 @@
  * Anything that is not a command is sent as an ordinary message, so this can
  * replace the composer outright rather than sitting beside it.
  */
-import { THEME_CSS, CONTROL_CSS, motifCSSOutput } from '../machvive-chat-syncopation-services/theme.js';
+import { CONTROL_CSS, SCROLL_CSS } from '../machvive-chat-syncopation-services/theme.js';
 import { whenServices } from '../machvive-chat-syncopation-services/machvive-chat-syncopation-services.js';
 import { transports } from '../machvive-chat-syncopation-services/daemon.js';
 import { resolveComponentConfig, keyToAttr } from '../machvive-chat-syncopation-services/component-config.js';
@@ -78,30 +78,29 @@ export class MachviveChatSyncopationCli extends HTMLElement {
     const design = this.#services?.state === 'design';
     this.shadowRoot.innerHTML = `
       <style>
-${THEME_CSS}
 ${CONTROL_CSS}
-${motifCSSOutput()}
+${SCROLL_CSS}
         :host {
           display: block;
           flex: 0 0 auto;
           padding: 0.5rem;
-          font-family: var(--mcs-mono);
+          font-family: var(--mcs-mono, ui-monospace, monospace);
           font-size: 0.875rem;
-          color: var(--mcs-fg);
-          background: var(--mcs-surface);
-          border-top: 1px solid var(--mcs-border);
+          color: var(--mcs-fg, #1a1a1a);
+          background: var(--mcs-surface, #f6f7f9);
+          border-top: 1px solid var(--mcs-border, #e2e4e8);
         }
-        .out { margin: 0 0 0.375rem; white-space: pre-wrap; color: var(--mcs-muted); }
+        .out { margin: 0 0 0.375rem; white-space: pre-wrap; color: var(--mcs-muted, #646464); }
         .out:empty { display: none; }
         .row { display: flex; align-items: center; gap: 0.5rem; }
-        .sigil { color: var(--mcs-accent); user-select: none; }
+        .sigil { color: var(--mcs-accent, #1565c0); user-select: none; }
         input {
           flex: 1 1 auto;
           padding: 0.375rem 0.5rem;
           font-family: inherit;
-          background: var(--mcs-bg);
+          background: var(--mcs-bg, #ffffff);
         }
-        :focus-visible { outline: 2px solid var(--mcs-accent); outline-offset: 2px; }
+        :focus-visible { outline: 2px solid var(--mcs-accent, #1565c0); outline-offset: 2px; }
         .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 ${design ? CONFIG_FORM_CSS : ''}
       </style>

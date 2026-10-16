@@ -10,7 +10,7 @@ import {
   MOTIFS,
   MOTIF_NAMES,
   MOTIF_TOKENS,
-  motifCSS
+  buildMotifScopeCSS
 } from '../src/wc/machvive-chat-syncopation-services/motifs.js';
 import { registerMotif, motifNames, motifCSSOutput } from '../src/wc/machvive-chat-syncopation-services/theme.js';
 import { mount, tick } from './helpers.js';
@@ -41,13 +41,12 @@ test('motifs only set tokens the theme defines', () => {
   }
 });
 
-test('a motif cascade mirrors the base theme: light, dark media, explicit dark', () => {
-  const css = motifCSS('corp', MOTIFS.corp);
-  const lightIdx = css.indexOf(':host([theme="corp"])');
-  const mediaIdx = css.indexOf('prefers-color-scheme: dark');
-  const explicitDarkIdx = css.indexOf('[theme="corp-dark"]');
-  assert.ok(lightIdx > -1 && mediaIdx > lightIdx && explicitDarkIdx > mediaIdx,
-    'order is load-bearing: light, then dark media, then explicit dark wins');
+test('a motif emits scope rules whose dark set follows the scheme', () => {
+  const css = buildMotifScopeCSS('corp', MOTIFS.corp);
+  assert.ok(css.includes('[data-mcs-motif="corp"]'), 'the motif scope rule exists');
+  assert.ok(css.includes('[data-mcs-theme="dark"] [data-mcs-motif="corp"]') || css.includes('[data-mcs-motif="corp"][data-mcs-theme="dark"]'),
+    'the dark set applies under a dark scheme');
+  assert.ok(css.includes('prefers-color-scheme: dark'), 'the dark set also follows the OS');
 });
 
 test('registerMotif adds a custom motif selectable at runtime', () => {
@@ -57,7 +56,7 @@ test('registerMotif adds a custom motif selectable at runtime', () => {
   });
   assert.ok(motifNames().includes('testmotif'));
   const out = motifCSSOutput();
-  assert.ok(out.includes('[theme="testmotif"]'), 'the accumulated CSS includes the new motif');
+  assert.ok(out.includes('[data-mcs-motif="testmotif"]'), 'the accumulated CSS includes the new motif scope');
   assert.ok(out.includes('--mcs-accent: #123456'), 'its light tokens are emitted');
 });
 
@@ -73,11 +72,13 @@ test('registerTheme on the services element registers and announces', async () =
   remove();
 });
 
-test('a component with a motif theme picks up the motif tokens', async () => {
-  const { query, remove } = mount('<machvive-chat-syncopation theme="artdeco"></machvive-chat-syncopation>');
+test('a motif scope sets the motif tokens for its subtree', async () => {
+  const { query, remove } = mount('<machvive-chat-syncopation data-mcs-motif="artdeco"></machvive-chat-syncopation>');
   await tick(20);
   const container = query('machvive-chat-syncopation');
-  const css = container.shadowRoot.querySelector('style').textContent;
-  assert.ok(css.includes('[theme="artdeco"]'), 'the motif rule is in the component stylesheet');
+  // The hoisted theme style carries the motif scope rule; the component inherits it.
+  const hoisted = document.getElementById('mcs-theme');
+  assert.ok(hoisted, 'the theme is hoisted to document head');
+  assert.ok(hoisted.textContent.includes('[data-mcs-motif="artdeco"]'), 'the artdeco scope rule is hoisted');
   remove();
 });
