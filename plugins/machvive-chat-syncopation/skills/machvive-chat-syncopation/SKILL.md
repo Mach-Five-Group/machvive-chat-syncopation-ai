@@ -150,9 +150,12 @@ replay, import or export a whole session, this is what to use.
 | `record:updated` | the record | Status or meta changed |
 | `conversation:cleared` | `{ id }` | The transcript was emptied |
 | `daemon:idle` | `{ id }` | Generation finished or stopped |
+| `daemon:busy` | `{ id }` | A turn started generating |
 | `daemon:error` | `{ id, error, name }` | A turn failed (`error` is a string — plain data, so recordings survive JSON) |
 | `prompt:fill` | `{ text, send }` | Something wants text in the composer |
 | `config:changed` | `{ config, previous? }` | Services configuration changed at runtime |
+| `state:changed` | `{ from, to }` | The surface state changed |
+| `theme:registered` | `{ name }` | A motif was registered at runtime |
 
 `bus.on('*', ({ topic, payload }) => …)` sees every topic, including custom ones an
 integrator emits — that is how the inspector works. `on` returns an unsubscribe

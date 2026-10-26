@@ -97,6 +97,9 @@ import '@machfivetechchicago/machvive-chat-syncopation-ai';
 // Or cherry-pick.
 import '@machfivetechchicago/machvive-chat-syncopation-ai/canvas';
 import '@machfivetechchicago/machvive-chat-syncopation-ai/prompt';
+
+// The icon set, as plain CSS strings — no DOM needed, so it loads anywhere.
+import { ICON_ROOT_CSS, ICON_CSS, ICON_NAMES } from '@machfivetechchicago/machvive-chat-syncopation-ai/icons';
 ```
 
 ## The shortest thing that works

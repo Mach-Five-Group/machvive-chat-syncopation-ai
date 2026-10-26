@@ -40,6 +40,10 @@
       "types": "./src/wc/machvive-chat-syncopation-services/machvive-chat-syncopation-services.d.ts",
       "default": "./src/wc/machvive-chat-syncopation-services/machvive-chat-syncopation-services.js"
     },
+    "./icons": {
+      "types": "./src/wc/machvive-chat-syncopation-services/icons.d.ts",
+      "default": "./src/wc/machvive-chat-syncopation-services/icons.js"
+    },
     "./container": {
       "types": "./src/wc/machvive-chat-syncopation/machvive-chat-syncopation.d.ts",
       "default": "./src/wc/machvive-chat-syncopation/machvive-chat-syncopation.js"

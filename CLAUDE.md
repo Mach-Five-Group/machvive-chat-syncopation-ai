@@ -38,9 +38,9 @@ The same file filters one jsdom "not implemented" warning (navigation, from the 
 
 ## Architecture
 
-**Entry points.** Eleven subpaths, all declared in `package.json` `exports`:
+**Entry points.** Twelve subpaths, all declared in `package.json` `exports`:
 - `.` → [index.js](index.js) — bulk import; imports every component (triggering self-registration) and re-exports the classes plus the whole service layer.
-- `./services`, `./container`, `./canvas`, `./prompt`, `./nudge`, `./cli`, `./voice`, `./inspector`, `./history` — cherry-picking.
+- `./services`, `./icons` (pure data, no DOM), `./container`, `./canvas`, `./prompt`, `./nudge`, `./cli`, `./voice`, `./inspector`, `./history` — cherry-picking.
 
 Adding a component means touching four places: the module under `src/wc/<tag-name>/`, its `.d.ts` sibling, the import/export pair in [index.js](index.js), and a new subpath in `package.json` `exports`. Missing any one breaks either the bulk import or the cherry-pick path, and nothing says so at runtime — so [test/package.test.js](test/package.test.js) asserts all four.
 
