@@ -19,6 +19,8 @@
 /** `:root` custom properties, one per icon — the single source of the data-URIs. */
 export const ICON_ROOT_CSS = `
 :root {
+  --mcs-icon-arrow-drop-down: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 -960 960 960'%3E%3Cpath d='M480-360 280-560h400L480-360Z'/%3E%3C/svg%3E");
+  --mcs-icon-arrow-drop-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 -960 960 960'%3E%3Cpath d='m280-400 200-200 200 200H280Z'/%3E%3C/svg%3E");
   --mcs-icon-cached: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 -960 960 960'%3E%3Cpath d='M482-160q-134 0-228-93t-94-227v-7l-64 64-56-56 160-160 160 160-56 56-64-64v7q0 100 70.5 170T482-240q26 0 51-6t49-18l60 60q-38 22-78 33t-82 11m278-161L600-481l56-56 64 64v-7q0-100-70.5-170T478-720q-26 0-51 6t-49 18l-60-60q38-22 78-33t82-11q134 0 228 93t94 227v7l64-64 56 56z'/%3E%3C/svg%3E");
   --mcs-icon-chat: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 -960 960 960'%3E%3Cpath d='M240-400h320v-80H240zm0-120h480v-80H240zm0-120h480v-80H240zM80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240zm126-240h594v-480H160v525zm-46 0v-480z'/%3E%3C/svg%3E");
   --mcs-icon-chat-bubble: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 -960 960 960'%3E%3Cpath d='M80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240zm126-240h594v-480H160v525zm-46 0v-480z'/%3E%3C/svg%3E");
@@ -83,6 +85,8 @@ export const ICON_CSS = `
   mask-size: contain;
   background-color: currentColor;
 }
+.mcs-icon-arrow-drop-down { --mcs-icon-img: var(--mcs-icon-arrow-drop-down); }
+.mcs-icon-arrow-drop-up { --mcs-icon-img: var(--mcs-icon-arrow-drop-up); }
 .mcs-icon-cached { --mcs-icon-img: var(--mcs-icon-cached); }
 .mcs-icon-chat { --mcs-icon-img: var(--mcs-icon-chat); }
 .mcs-icon-chat-bubble { --mcs-icon-img: var(--mcs-icon-chat-bubble); }
@@ -128,6 +132,8 @@ export const ICON_CSS = `
 
 /** Every icon name, for tooling and design-state options. */
 export const ICON_NAMES = [
+  "arrow-drop-down",
+  "arrow-drop-up",
   "cached",
   "chat",
   "chat-bubble",
