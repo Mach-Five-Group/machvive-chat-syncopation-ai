@@ -30,6 +30,7 @@ export const ICON_ROOT_CSS = `
   --mcs-icon-delete: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 -960 960 960'%3E%3Cpath d='M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120zm400-600H280v520h400zM360-280h80v-360h-80zm160 0h80v-360h-80zM280-720v520z'/%3E%3C/svg%3E");
   --mcs-icon-document-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 -960 960 960'%3E%3Cpath d='M200-800v241-1 400zv200zm0 720q-33 0-56.5-23.5T120-160v-640q0-33 23.5-56.5T200-880h320l240 240v100q-19-8-39-12.5t-41-6.5v-41H480v-200H200v640h241q16 24 36 44.5T521-80zm531-149q29-29 29-71t-29-71-71-29-71 29-29 71 29 71 71 29 71-29M864-40 756-148q-21 14-45.5 21t-50.5 7q-75 0-127.5-52.5T480-300t52.5-127.5T660-480t127.5 52.5T840-300q0 26-7 50.5T812-204L920-96z'/%3E%3C/svg%3E");
   --mcs-icon-download: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 -960 960 960'%3E%3Cpath d='M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58zM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160z'/%3E%3C/svg%3E");
+  --mcs-icon-emergency-home: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 -960 960 960'%3E%3Cpath d='M449.5-85Q435-91 423-102L102-423q-11-12-17-26.5T79-480q0-16 6-31t17-26l321-321q12-12 26.5-17.5T480-881q16 0 31 5.5t26 17.5l321 321q12 11 17.5 26t5.5 31q0 16-5.5 30.5T858-423L537-102q-11 11-26 17t-31 6q-16 0-30.5-6Zm30.5-74 321-321-321-321-321 321 321 321Zm-40-281h80v-240h-80v240Zm68.5 108.5Q520-343 520-360t-11.5-28.5Q497-400 480-400t-28.5 11.5Q440-377 440-360t11.5 28.5Q463-320 480-320t28.5-11.5ZM480-480Z'/%3E%3C/svg%3E");
   --mcs-icon-file-export: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 -960 960 960'%3E%3Cpath d='m202-65-56-57 118-118h-90v-80h226v226h-80v-89zm278-15v-80h240v-440H520v-200H240v400h-80v-400q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80z'/%3E%3C/svg%3E");
   --mcs-icon-file-open: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 -960 960 960'%3E%3Cpath d='M240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v240h-80v-200H520v-200H240v640h360v80zm638 15L760-183v89h-80v-226h226v80h-90l118 118zm-638-95v-640z'/%3E%3C/svg%3E");
   --mcs-icon-file-present: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 -960 960 960'%3E%3Cpath d='M240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h360l200 200v520q0 33-23.5 56.5T720-80zm0-80h480v-480H560v-160H240zm240-40q67 0 113.5-47T640-360v-160h-80v160q0 33-23 56.5T480-280q-33 0-56.5-23.5T400-360v-220q0-9 6-14.5t14-5.5q9 0 14.5 5.5T440-580v220h80v-220q0-42-29-71t-71-29-71 29-29 71v220q0 66 47 113t113 47M240-800v160zv640z'/%3E%3C/svg%3E");
@@ -96,6 +97,7 @@ export const ICON_CSS = `
 .mcs-icon-delete { --mcs-icon-img: var(--mcs-icon-delete); }
 .mcs-icon-document-search { --mcs-icon-img: var(--mcs-icon-document-search); }
 .mcs-icon-download { --mcs-icon-img: var(--mcs-icon-download); }
+.mcs-icon-emergency-home { --mcs-icon-img: var(--mcs-icon-emergency-home); }
 .mcs-icon-file-export { --mcs-icon-img: var(--mcs-icon-file-export); }
 .mcs-icon-file-open { --mcs-icon-img: var(--mcs-icon-file-open); }
 .mcs-icon-file-present { --mcs-icon-img: var(--mcs-icon-file-present); }
@@ -143,6 +145,7 @@ export const ICON_NAMES = [
   "delete",
   "document-search",
   "download",
+  "emergency-home",
   "file-export",
   "file-open",
   "file-present",
