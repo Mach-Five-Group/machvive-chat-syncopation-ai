@@ -341,6 +341,16 @@ There is no bundler and no linter: files are published as authored, so what is o
 disk is what consumers load. Before trusting a new test, break the thing it covers
 and watch it fail — a green suite proves nothing until you have seen it go red.
 
+## More from MachFiveTech
+
+Everything we publish is listed at
+**[npmx.dev/~machfivetech](https://npmx.dev/~machfivetech)**, or on
+[npm](https://www.npmjs.com/~machfivetech) directly: this package,
+[machvive-webmcp-ai](https://www.npmjs.com/package/@machfivetechchicago/machvive-webmcp-ai)
+for making a page callable by an AI agent, and
+[machvive-neodigm55-ux](https://www.npmjs.com/package/@machfivetechchicago/machvive-neodigm55-ux)
+the Neodigm 55 UX components. All three are dependency-free web components.
+
 ## License
 
 [Apache-2.0](LICENSE) © MachFiveTech Chicago
