@@ -22,6 +22,7 @@ export const ICON_ROOT_CSS = `
   --mcs-icon-arrow-drop-down: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 -960 960 960'%3E%3Cpath d='M480-360 280-560h400L480-360Z'/%3E%3C/svg%3E");
   --mcs-icon-arrow-drop-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 -960 960 960'%3E%3Cpath d='m280-400 200-200 200 200H280Z'/%3E%3C/svg%3E");
   --mcs-icon-cached: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 -960 960 960'%3E%3Cpath d='M482-160q-134 0-228-93t-94-227v-7l-64 64-56-56 160-160 160 160-56 56-64-64v7q0 100 70.5 170T482-240q26 0 51-6t49-18l60 60q-38 22-78 33t-82 11m278-161L600-481l56-56 64 64v-7q0-100-70.5-170T478-720q-26 0-51 6t-49 18l-60-60q38-22 78-33t82-11q134 0 228 93t94 227v7l64-64 56 56z'/%3E%3C/svg%3E");
+  --mcs-icon-casino: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 -960 960 960'%3E%3Cpath d='M342.5-257.5Q360-275 360-300t-17.5-42.5Q325-360 300-360t-42.5 17.5Q240-325 240-300t17.5 42.5Q275-240 300-240t42.5-17.5Zm0-360Q360-635 360-660t-17.5-42.5Q325-720 300-720t-42.5 17.5Q240-685 240-660t17.5 42.5Q275-600 300-600t42.5-17.5Zm180 180Q540-455 540-480t-17.5-42.5Q505-540 480-540t-42.5 17.5Q420-505 420-480t17.5 42.5Q455-420 480-420t42.5-17.5Zm180 180Q720-275 720-300t-17.5-42.5Q685-360 660-360t-42.5 17.5Q600-325 600-300t17.5 42.5Q635-240 660-240t42.5-17.5Zm0-360Q720-635 720-660t-17.5-42.5Q685-720 660-720t-42.5 17.5Q600-685 600-660t17.5 42.5Q635-600 660-600t42.5-17.5ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Zm0-560v560-560Z'/%3E%3C/svg%3E");
   --mcs-icon-chat: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 -960 960 960'%3E%3Cpath d='M240-400h320v-80H240zm0-120h480v-80H240zm0-120h480v-80H240zM80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240zm126-240h594v-480H160v525zm-46 0v-480z'/%3E%3C/svg%3E");
   --mcs-icon-chat-bubble: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 -960 960 960'%3E%3Cpath d='M80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240zm126-240h594v-480H160v525zm-46 0v-480z'/%3E%3C/svg%3E");
   --mcs-icon-close: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 -960 960 960'%3E%3Cpath d='m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224z'/%3E%3C/svg%3E");
@@ -89,6 +90,7 @@ export const ICON_CSS = `
 .mcs-icon-arrow-drop-down { --mcs-icon-img: var(--mcs-icon-arrow-drop-down); }
 .mcs-icon-arrow-drop-up { --mcs-icon-img: var(--mcs-icon-arrow-drop-up); }
 .mcs-icon-cached { --mcs-icon-img: var(--mcs-icon-cached); }
+.mcs-icon-casino { --mcs-icon-img: var(--mcs-icon-casino); }
 .mcs-icon-chat { --mcs-icon-img: var(--mcs-icon-chat); }
 .mcs-icon-chat-bubble { --mcs-icon-img: var(--mcs-icon-chat-bubble); }
 .mcs-icon-close { --mcs-icon-img: var(--mcs-icon-close); }
@@ -137,6 +139,7 @@ export const ICON_NAMES = [
   "arrow-drop-down",
   "arrow-drop-up",
   "cached",
+  "casino",
   "chat",
   "chat-bubble",
   "close",
